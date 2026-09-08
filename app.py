@@ -24,6 +24,40 @@ from lgr_plots import create_base_plot, add_poles_zeros_traces
 st.set_page_config(page_title="LGR - 12 Passos", layout="wide")
 
 
+from fractions import Fraction
+
+def format_frac(val, tol=1e-5):
+    if abs(val - round(val)) < tol:
+        return f"{int(round(val))}"
+    frac = Fraction(float(val)).limit_denominator(1000)
+    if frac.denominator == 1:
+        return f"{frac.numerator}"
+    if frac.numerator < 0:
+        return f"-{abs(frac.numerator)}/{frac.denominator}"
+    return f"{frac.numerator}/{frac.denominator}"
+
+def format_complex_frac(val, tol=1e-5):
+    r = float(np.real(val))
+    i = float(np.imag(val))
+    
+    if abs(i) < tol:
+        return format_frac(r, tol)
+    
+    i_frac = Fraction(abs(i)).limit_denominator(1000)
+    if i_frac.numerator == 1 and i_frac.denominator == 1:
+        i_str = "j"
+    elif i_frac.denominator == 1:
+        i_str = f"{i_frac.numerator}j"
+    else:
+        i_str = f"{i_frac.numerator}/{i_frac.denominator}j"
+        
+    sign = "+" if i > 0 else "-"
+    
+    if abs(r) < tol:
+        return f"{'-' if i < 0 else ''}{i_str}"
+        
+    return f"{format_frac(r, tol)} {sign} {i_str}"
+
 def main():
     st.markdown(
         """
@@ -331,7 +365,7 @@ def main():
 
                     term_parts = []
                     if d_val != 0:
-                        term_parts.append(f"{d_val:g}")
+                        term_parts.append(f"{format_frac(d_val)}")
                     if n_val != 0:
                         sign = (
                             "+"
@@ -339,7 +373,7 @@ def main():
                             else ("" if n_val > 0 else "-")
                         )
                         abs_n = abs(n_val)
-                        n_str = f"{abs_n:g}" if abs_n != 1 else ""
+                        n_str = f"{format_frac(abs_n)}" if abs_n != 1 else ""
                         term_parts.append(f"{sign}{n_str}K")
 
                     term_coeff = "".join(term_parts).strip()
@@ -385,7 +419,7 @@ def main():
             num_fact = format_factored_latex(zeros)
             den_fact = format_factored_latex(poles)
             K_scale = N_coeffs[0] / D_coeffs[0]
-            K_str = f"{K_scale:g}" if K_scale != 1.0 else ""
+            K_str = f"{format_frac(K_scale)}" if K_scale != 1.0 else ""
             st.latex(
                 r"P(s) = " + K_str + r"\frac{" + num_fact + r"}{" + den_fact + r"}"
             )
@@ -393,10 +427,10 @@ def main():
             def format_root(r):
                 r_rounded = np.round(r, 4)
                 if abs(np.imag(r_rounded)) < 1e-5:
-                    return f"{np.real(r_rounded):g}"
+                    return f"{format_frac(np.real(r_rounded))}"
                 else:
                     sign = "+" if np.imag(r_rounded) > 0 else "-"
-                    return f"{np.real(r_rounded):g} {sign} {abs(np.imag(r_rounded)):g}j"
+                    return f"{format_frac(np.real(r_rounded))} {sign} {format_frac(abs(np.imag(r_rounded)))}j"
 
             z_list = [
                 f"z_{{{i+1}}} = {format_root(z)}"
@@ -454,10 +488,10 @@ def main():
                 start = real_roots[i]
                 if i + 1 < len(real_roots):
                     end = real_roots[i + 1]
-                    segments.append(f"[{end:g}, {start:g}]")
+                    segments.append(f"[{format_frac(end)}, {format_frac(start)}]")
                     segment_coords.append((start, end))
                 else:
-                    segments.append(f"(-∞, {start:g}]")
+                    segments.append(f"(-∞, {format_frac(start)}]")
                     end_plot = xmin - (xmax - xmin) * 0.1
                     segment_coords.append((start, end_plot))
                     fig4.add_annotation(
@@ -612,8 +646,13 @@ def main():
 
         # Passo 5
         with st.expander("Passo 5: Número de lugares separados (ramos)", expanded=True):
+            st.markdown(r"Sendo $n_P$ o número de polos e $n_Z$ o número de zeros da malha aberta, temos:")
+            st.markdown(rf"- $n_P = {nP}$")
+            st.markdown(rf"- $n_Z = {nZ}$")
+            st.markdown(r"O número de lugares separados (ramos do LGR) é dado por:")
             ls = max(nP, nZ)
-            st.latex(f"LS = \\max({nP}, {nZ}) = {ls}")
+            st.latex(r"LS = \max(n_P, n_Z)")
+            st.latex(rf"LS = \max({nP}, {nZ}) = {ls}")
 
         # Passo 6
         with st.expander("Passo 6: Simetria", expanded=True):
@@ -625,18 +664,8 @@ def main():
                 st.markdown("Não há assíntotas.")
             else:
                 st.markdown(r"**Centro das assíntotas ($\sigma_A$):**")
-                sum_p_str = " + ".join(
-                    [
-                        f"({np.real(p):g}{'+' + str(np.imag(p)) + 'j' if np.imag(p)>0 else (str(np.imag(p)) + 'j' if np.imag(p)<0 else '')})"
-                        for p in poles
-                    ]
-                )
-                sum_z_str = " + ".join(
-                    [
-                        f"({np.real(z):g}{'+' + str(np.imag(z)) + 'j' if np.imag(z)>0 else (str(np.imag(z)) + 'j' if np.imag(z)<0 else '')})"
-                        for z in zeros
-                    ]
-                )
+                sum_p_str = " + ".join([f"({format_complex_frac(p)})" for p in poles])
+                sum_z_str = " + ".join([f"({format_complex_frac(z)})" for z in zeros])
                 if not sum_p_str:
                     sum_p_str = "0"
                 if not sum_z_str:
@@ -644,7 +673,7 @@ def main():
 
                 st.latex(r"\sigma_A = \frac{\sum p_i - \sum z_i}{n_P - n_Z}")
                 st.latex(
-                    rf"\sigma_A = \frac{{[{sum_p_str}] - [{sum_z_str}]}}{{{nP} - {nZ}}} = {np.real(sigma_A):.3g}"
+                    rf"\sigma_A = \frac{{[{sum_p_str}] - [{sum_z_str}]}}{{{nP} - {nZ}}} = {format_frac(np.real(sigma_A))}"
                 )
 
                 angles_A = []
@@ -658,7 +687,7 @@ def main():
                 )
                 for k, angle in enumerate(angles_A):
                     st.latex(
-                        rf"\theta_{k} = \frac{{(2({k}) + 1) \cdot 180^\circ}}{{{abs(nP - nZ)}}} = {angle:.1f}^\circ"
+                        rf"\theta_{k} = \frac{{(2({k}) + 1) \cdot 180^\circ}}{{{abs(nP - nZ)}}} = {format_frac(angle)}^\circ"
                     )
 
                 st.markdown(r"**Cruzamento das assíntotas com o eixo imaginário:**")
@@ -671,11 +700,11 @@ def main():
                     if angle % 180 == 90:
                         if np.real(sigma_A) == 0:
                             st.latex(
-                                rf"\theta_{k} = {angle:.1f}^\circ \implies \text{{Assíntota sobre o eixo imaginário}}"
+                                rf"\theta_{k} = {format_frac(angle)}^\circ \implies \text{{Assíntota sobre o eixo imaginário}}"
                             )
                         else:
                             st.latex(
-                                rf"\theta_{k} = {angle:.1f}^\circ \implies \text{{Assíntota paralela ao eixo imaginário (não cruza)}}"
+                                rf"\theta_{k} = {format_frac(angle)}^\circ \implies \text{{Assíntota paralela ao eixo imaginário (não cruza)}}"
                             )
                     else:
                         cos_val = np.cos(np.radians(angle))
@@ -684,16 +713,16 @@ def main():
                             cross_y = -np.real(sigma_A) * np.tan(np.radians(angle))
                             if abs(cross_y) < 1e-5:
                                 st.latex(
-                                    rf"\theta_{k} = {angle:.1f}^\circ \implies \text{{Assíntota sobre o eixo real (não destacaremos a origem)}}"
+                                    rf"\theta_{k} = {format_frac(angle)}^\circ \implies \text{{Assíntota sobre o eixo real (não destacaremos a origem)}}"
                                 )
                             else:
                                 st.latex(
-                                    rf"\theta_{k} = {angle:.1f}^\circ \implies y_{{cruzamento}} = -({np.real(sigma_A):.3g}) \cdot \tan({angle:.1f}^\circ) = {cross_y:.3g}j"
+                                    rf"\theta_{k} = {format_frac(angle)}^\circ \implies y_{{cruzamento}} = -({format_frac(np.real(sigma_A))}) \cdot \tan({format_frac(angle)}^\circ) = {format_frac(cross_y)}j"
                                 )
                                 crossings.append((angle, cross_y))
                         else:
                             st.latex(
-                                rf"\theta_{k} = {angle:.1f}^\circ \implies \text{{A semirreta se afasta do eixo imaginário (não cruza)}}"
+                                rf"\theta_{k} = {format_frac(angle)}^\circ \implies \text{{A semirreta se afasta do eixo imaginário (não cruza)}}"
                             )
 
                 fig7 = create_base_plot(
@@ -724,7 +753,10 @@ def main():
                     t_vals = [t for t in t_vals if t > 0]
                     t_max = min(t_vals) if t_vals else length_max
 
-                    t_draw = t_max * 0.85
+                    base_R = max(xmax - xmin, ymax - ymin) * 0.05
+                    arc_R = base_R + q * (max(xmax - xmin, ymax - ymin) * 0.08)
+
+                    t_draw = max(t_max * 0.85, arc_R * 1.25)
 
                     dx = t_draw * np.cos(rad)
                     dy = t_draw * np.sin(rad)
@@ -756,9 +788,6 @@ def main():
                         arrowwidth=2,
                         arrowcolor="orange",
                     )
-
-                    base_R = max(xmax - xmin, ymax - ymin) * 0.05
-                    arc_R = base_R + q * (max(xmax - xmin, ymax - ymin) * 0.08)
 
                     if angle > 5:
                         # Draw counter-clockwise from 0 to angle
@@ -810,7 +839,7 @@ def main():
                         fig7.add_annotation(
                             x=text_x,
                             y=text_y,
-                            text=f"{angle:.1f}°",
+                            text=f"{format_frac(angle)}°",
                             showarrow=False,
                             font=dict(color="orange", size=13),
                         )
@@ -818,7 +847,7 @@ def main():
                         fig7.add_annotation(
                             x=head_x + dx * 0.1,
                             y=head_y + dy * 0.1,
-                            text=f"{angle:.1f}°",
+                            text=f"{format_frac(angle)}°",
                             showarrow=False,
                             font=dict(color="orange", size=14),
                         )
@@ -836,10 +865,10 @@ def main():
                                     color="magenta",
                                     line=dict(width=2),
                                 ),
-                                text=[f"{cross_y:.3g}j"],
+                                text=[f"{format_frac(cross_y)}j"],
                                 textposition="middle right",
                                 textfont=dict(color="magenta", size=13),
-                                name=f"Cruzamento {angle:.1f}°",
+                                name=f"Cruzamento {format_frac(angle)}°",
                             )
                         )
 
@@ -855,7 +884,7 @@ def main():
                             color="orange",
                             line=dict(color="white", width=2),
                         ),
-                        text=[f"σ<sub>A</sub> = {np.real(sigma_A):.3g}"],
+                        text=[f"σ<sub>A</sub> = {format_frac(np.real(sigma_A))}"],
                         textposition="bottom center",
                         textfont=dict(color="orange", size=13),
                         name="Centroide",
@@ -880,10 +909,13 @@ def main():
                         if np.isreal(s_val)
                         else f"{np.real(s_val):.3f} + {np.imag(s_val):.3f}j"
                     )
-                    st.markdown(f"- Ponto $s = {s_format}$ com ganho $K = {k_val:.3g}$")
+                    st.markdown(f"- Ponto $s = {s_format}$ com ganho $K = {format_frac(k_val)}$")
 
         # Passo 9
         with st.expander("Passo 9: Cruzamento com o eixo imaginário", expanded=True):
+            st.markdown("Para aplicar o critério de Routh-Hurwitz, utilizamos o polinômio característico:")
+            st.latex(char_poly_str + " = 0")
+
             routh_table = routh_result["table"]
             degree = routh_result["degree"]
             row0_len = routh_result["row0_len"]
@@ -929,7 +961,7 @@ def main():
                         f"Igualamos o primeiro elemento da linha $s^{power}$ a zero:"
                     )
                     st.latex(
-                        f"{sp.latex(sp.cancel(row_expr))} = 0 \\implies K_{{crítico}} = {k_crit:.3g}"
+                        f"{sp.latex(sp.cancel(row_expr))} = 0 \\implies K_{{crítico}} = {format_frac(k_crit)}"
                     )
 
                     st.markdown(f"**2. Montando a Equação Auxiliar ($A(s)$):**")
@@ -943,7 +975,7 @@ def main():
 
                     for w in omegas:
                         st.latex(
-                            rf"s = \pm {w:.3g}j \implies \omega = {w:.3g} \text{{ rad/s}}"
+                            rf"s = \pm {format_frac(w)}j \implies \omega = {format_frac(w)} \text{{ rad/s}}"
                         )
             else:
                 st.markdown(
@@ -981,7 +1013,7 @@ def main():
                     sum_z = sum(z_angles)
 
                     st.markdown(
-                        f"**Ângulo de Partida do polo $p = {np.real(cp):.3g} {'+' if np.imag(cp)>0 else '-'} {abs(np.imag(cp)):.3g}j$:**"
+                        f"**Ângulo de Partida do polo $p = {format_frac(np.real(cp))} {'+' if np.imag(cp)>0 else '-'} {format_frac(abs(np.imag(cp)))}j$:**"
                     )
                     st.latex(
                         r"\theta_p = \frac{180^\circ(2q+1) + \sum \phi_z - \sum \theta_{outros\_polos}}{m}"
@@ -990,21 +1022,21 @@ def main():
                     if p_angles:
                         st.latex(
                             rf"\sum \theta_{{outros\_polos}} = "
-                            + " + ".join([f"{a:.1f}^\\circ" for a in p_angles])
-                            + f" = {sum_p:.1f}^\\circ"
+                            + " + ".join([f"{format_frac(a)}^\\circ" for a in p_angles])
+                            + f" = {format_frac(sum_p)}^\\circ"
                         )
                     if z_angles:
                         st.latex(
                             rf"\sum \phi_z = "
-                            + " + ".join([f"{a:.1f}^\\circ" for a in z_angles])
-                            + f" = {sum_z:.1f}^\\circ"
+                            + " + ".join([f"{format_frac(a)}^\\circ" for a in z_angles])
+                            + f" = {format_frac(sum_z)}^\\circ"
                         )
 
                     for q in range(m):
                         angle_dep = ((2 * q + 1) * 180 - sum_p + sum_z) / m
                         angle_norm = (angle_dep + 180) % 360 - 180
                         st.latex(
-                            rf"q = {q} \implies \theta_p = \frac{{180^\circ({2*q+1}) + {sum_z:.1f}^\circ - ({sum_p:.1f}^\circ)}}{{{m}}} = {angle_norm:.1f}^\circ"
+                            rf"q = {q} \implies \theta_p = \frac{{180^\circ({2*q+1}) + {format_frac(sum_z)}^\circ - ({format_frac(sum_p)}^\circ)}}{{{m}}} = {format_frac(angle_norm)}^\circ"
                         )
 
                 for cz in complex_zeros:
@@ -1019,7 +1051,7 @@ def main():
                     sum_p = sum(p_angles)
 
                     st.markdown(
-                        f"**Ângulo de Chegada no zero $z = {np.real(cz):.3g} {'+' if np.imag(cz)>0 else '-'} {abs(np.imag(cz)):.3g}j$:**"
+                        f"**Ângulo de Chegada no zero $z = {format_frac(np.real(cz))} {'+' if np.imag(cz)>0 else '-'} {format_frac(abs(np.imag(cz)))}j$:**"
                     )
                     st.latex(
                         r"\theta_z = \frac{180^\circ(2q+1) + \sum \theta_p - \sum \phi_{outros\_zeros}}{m}"
@@ -1028,21 +1060,21 @@ def main():
                     if p_angles:
                         st.latex(
                             rf"\sum \theta_p = "
-                            + " + ".join([f"{a:.1f}^\\circ" for a in p_angles])
-                            + f" = {sum_p:.1f}^\\circ"
+                            + " + ".join([f"{format_frac(a)}^\\circ" for a in p_angles])
+                            + f" = {format_frac(sum_p)}^\\circ"
                         )
                     if z_angles:
                         st.latex(
                             rf"\sum \phi_{{outros\_zeros}} = "
-                            + " + ".join([f"{a:.1f}^\\circ" for a in z_angles])
-                            + f" = {sum_z:.1f}^\\circ"
+                            + " + ".join([f"{format_frac(a)}^\\circ" for a in z_angles])
+                            + f" = {format_frac(sum_z)}^\\circ"
                         )
 
                     for q in range(m):
                         angle_arr = ((2 * q + 1) * 180 - sum_z + sum_p) / m
                         angle_norm = (angle_arr + 180) % 360 - 180
                         st.latex(
-                            rf"q = {q} \implies \theta_z = \frac{{180^\circ({2*q+1}) + {sum_p:.1f}^\circ - ({sum_z:.1f}^\circ)}}{{{m}}} = {angle_norm:.1f}^\circ"
+                            rf"q = {q} \implies \theta_z = \frac{{180^\circ({2*q+1}) + {format_frac(sum_p)}^\circ - ({format_frac(sum_z)}^\circ)}}{{{m}}} = {format_frac(angle_norm)}^\circ"
                         )
 
         # Passo 11
@@ -1061,50 +1093,50 @@ def main():
             )
 
             st.markdown(
-                f"Para o ponto de teste $s_0 = {np.real(s0):.3g} {'+' if np.imag(s0)>0 else '-'} {abs(np.imag(s0)):.3g}j$, calculamos os vetores:"
+                f"Para o ponto de teste $s_0 = {format_frac(np.real(s0))} {'+' if np.imag(s0)>0 else '-'} {format_frac(abs(np.imag(s0)))}j$, calculamos os vetores:"
             )
 
             def fmt_c(c):
-                return f"{np.real(c):.3g} {'+' if np.imag(c)>=0 else '-'} {abs(np.imag(c)):.3g}j"
+                return f"{format_frac(np.real(c))} {'+' if np.imag(c)>=0 else '-'} {format_frac(abs(np.imag(c)))}j"
 
             if len(zeros) > 0:
                 st.markdown("**Ângulos a partir dos zeros:**")
                 for i, z in enumerate(zeros):
                     st.latex(
-                        rf"\angle(s_0 - z_{i+1}) = \angle({fmt_c(s0)} - ({fmt_c(z)})) = \angle({fmt_c(s0 - z)}) = {angles_z[i]:.1f}^\circ"
+                        rf"\angle(s_0 - z_{i+1}) = \angle({fmt_c(s0)} - ({fmt_c(z)})) = \angle({fmt_c(s0 - z)}) = {format_frac(angles_z[i])}^\circ"
                     )
 
             if len(poles) > 0:
                 st.markdown("**Ângulos a partir dos polos:**")
                 for i, p in enumerate(poles):
                     st.latex(
-                        rf"\angle(s_0 - p_{i+1}) = \angle({fmt_c(s0)} - ({fmt_c(p)})) = \angle({fmt_c(s0 - p)}) = {angles_p[i]:.1f}^\circ"
+                        rf"\angle(s_0 - p_{i+1}) = \angle({fmt_c(s0)} - ({fmt_c(p)})) = \angle({fmt_c(s0 - p)}) = {format_frac(angles_p[i])}^\circ"
                     )
 
             st.markdown("**Substituindo na condição:**")
 
             str_z = (
-                "(" + " + ".join([f"{a:.1f}^\\circ" for a in angles_z]) + ")"
+                "(" + " + ".join([f"{format_frac(a)}^\\circ" for a in angles_z]) + ")"
                 if angles_z
                 else r"0^\circ"
             )
             str_p = (
-                "(" + " + ".join([f"{a:.1f}^\\circ" for a in angles_p]) + ")"
+                "(" + " + ".join([f"{format_frac(a)}^\\circ" for a in angles_p]) + ")"
                 if angles_p
                 else r"0^\circ"
             )
 
             st.latex(
-                rf"\angle G(s_0)H(s_0) = {str_z} - {str_p} = {total_angle:.1f}^\circ"
+                rf"\angle G(s_0)H(s_0) = {str_z} - {str_p} = {format_frac(total_angle)}^\circ"
             )
 
             if is_lgr:
                 st.success(
-                    f"Ponto pertence ao LGR (Ângulo {normalized_angle:.1f}° ≈ 180°)."
+                    f"Ponto pertence ao LGR (Ângulo {format_frac(normalized_angle)}° ≈ 180°)."
                 )
             else:
                 st.error(
-                    f"Ponto NÃO pertence ao LGR (Ângulo {normalized_angle:.1f}° ≠ 180°)."
+                    f"Ponto NÃO pertence ao LGR (Ângulo {format_frac(normalized_angle)}° ≠ 180°)."
                 )
 
         # Passo 12
@@ -1124,27 +1156,34 @@ def main():
                 st.markdown("**Distâncias aos zeros:**")
                 for i, z in enumerate(zeros):
                     st.latex(
-                        rf"|s_0 - z_{i+1}| = |{fmt_c(s0)} - ({fmt_c(z)})| = |{fmt_c(s0 - z)}| = {dist_z[i]:.3g}"
+                        rf"|s_0 - z_{i+1}| = |{fmt_c(s0)} - ({fmt_c(z)})| = |{fmt_c(s0 - z)}| = {format_frac(dist_z[i])}"
                     )
 
             if len(poles) > 0:
                 st.markdown("**Distâncias aos polos:**")
                 for i, p in enumerate(poles):
                     st.latex(
-                        rf"|s_0 - p_{i+1}| = |{fmt_c(s0)} - ({fmt_c(p)})| = |{fmt_c(s0 - p)}| = {dist_p[i]:.3g}"
+                        rf"|s_0 - p_{i+1}| = |{fmt_c(s0)} - ({fmt_c(p)})| = |{fmt_c(s0 - p)}| = {format_frac(dist_p[i])}"
                     )
 
             st.markdown("**Substituindo:**")
 
-            str_p = " \\cdot ".join([f"{d:.3g}" for d in dist_p]) if dist_p else "1"
-            str_z = " \\cdot ".join([f"{d:.3g}" for d in dist_z]) if dist_z else "1"
+            str_p = " \\cdot ".join([f"{format_frac(d)}" for d in dist_p]) if dist_p else "1"
+            str_z = " \\cdot ".join([f"{format_frac(d)}" for d in dist_z]) if dist_z else "1"
 
-            st.latex(rf"K = \frac{{{str_p}}}{{{str_z}}} = {K_val:.3g}")
+            st.latex(rf"K = \frac{{{str_p}}}{{{str_z}}} = {format_frac(K_val)}")
 
         # Gráfico Final
         st.markdown("## Gráfico Final do LGR")
+        
+        extra_K = []
+        if valid_breakaway:
+            extra_K.extend([float(k) for _, k in valid_breakaway if k > 0])
+        crossings_data = routh_result.get("crossings_data", [])
+        if crossings_data:
+            extra_K.extend([float(data["k_crit"]) for data in crossings_data if data["k_crit"] > 0])
 
-        K_vec, all_roots = simulate_root_locus(D_coeffs, N_coeffs, nP, nZ)
+        K_vec, all_roots = simulate_root_locus(D_coeffs, N_coeffs, nP, nZ, extra_K=extra_K)
 
         fig_final = create_base_plot(
             poles,

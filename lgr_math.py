@@ -4,6 +4,18 @@ Contains all the mathematical and control theory logic required to build the Roo
 """
 
 import numpy as np
+from fractions import Fraction
+
+def format_frac(val, tol=1e-5):
+    if abs(val - round(val)) < tol:
+        return f"{int(round(val))}"
+    frac = Fraction(float(val)).limit_denominator(1000)
+    if frac.denominator == 1:
+        return f"{frac.numerator}"
+    if frac.numerator < 0:
+        return f"-{abs(frac.numerator)}/{frac.denominator}"
+    return f"{frac.numerator}/{frac.denominator}"
+
 import sympy as sp
 from typing import List, Tuple, Dict, Any
 
@@ -37,7 +49,7 @@ def format_poly_latex(coeffs: List[float], var: str = "s") -> str:
 
         c_abs = abs(c)
         if c_abs != 1 or degree == 0:
-            term += f"{c_abs:g}"
+            term += f"{format_frac(c_abs)}"
 
         if degree > 0:
             if degree == 1:
@@ -77,14 +89,14 @@ def format_factored_latex(roots: np.ndarray) -> str:
             if r_val == 0:
                 base = "s"
             elif r_val > 0:
-                base = f"(s - {r_val:g})"
+                base = f"(s - {format_frac(r_val)})"
             else:
-                base = f"(s + {-r_val:g})"
+                base = f"(s + {format_frac(-r_val)})"
         else:
             real_part = np.real(r)
             imag_part = np.imag(r)
             sign = "+" if imag_part > 0 else "-"
-            base = f"(s - ({real_part:g} {sign} {abs(imag_part):g}j))"
+            base = f"(s - ({format_frac(real_part)} {sign} {format_frac(abs(imag_part))}j))"
 
         if count > 1:
             terms.append(f"{base}^{{{count}}}")
@@ -252,12 +264,15 @@ def build_routh_hurwitz(N_coeffs: List[float], D_coeffs: List[float]) -> Dict[st
 
 
 def simulate_root_locus(
-    D_coeffs: List[float], N_coeffs: List[float], nP: int, nZ: int, points: int = 500
+    D_coeffs: List[float], N_coeffs: List[float], nP: int, nZ: int, points: int = 2500, extra_K: List[float] = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Simulates the positions of the roots for logarithmically spaced values of K.
     Returns (K_vec, all_roots)."""
-    K_vec = np.logspace(-2, 3, points)
+    K_vec = np.logspace(-4, 4, points)
     K_vec = np.insert(K_vec, 0, 0)
+    if extra_K:
+        K_vec = np.concatenate([K_vec, extra_K])
+    K_vec = np.sort(np.unique(K_vec))
 
     all_roots = []
     prev_r = None
