@@ -1,0 +1,5 @@
+content = open('app.py', encoding='utf-8').read()
+content = content.replace('rf"-\\\\frac{{{abs(frac.numerator)}}}{{{frac.denominator}}}"', 'f"-{abs(frac.numerator)}/{frac.denominator}"')
+content = content.replace('rf"\\\\frac{{{frac.numerator}}}{{{frac.denominator}}}"', 'f"{frac.numerator}/{frac.denominator}"')
+content = content.replace('rf"\\\\frac{{{i_frac.numerator}}}{{{i_frac.denominator}}}j"', 'f"{i_frac.numerator}/{i_frac.denominator}j"')
+open('app.py', 'w', encoding='utf-8').write(content)

@@ -9,12 +9,7 @@ from fractions import Fraction
 def format_frac(val, tol=1e-5):
     if abs(val - round(val)) < tol:
         return f"{int(round(val))}"
-    frac = Fraction(float(val)).limit_denominator(1000)
-    if frac.denominator == 1:
-        return f"{frac.numerator}"
-    if frac.numerator < 0:
-        return f"-{abs(frac.numerator)}/{frac.denominator}"
-    return f"{frac.numerator}/{frac.denominator}"
+    return f"{float(val):.3g}"
 
 import sympy as sp
 from typing import List, Tuple, Dict, Any
