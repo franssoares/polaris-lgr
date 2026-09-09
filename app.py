@@ -426,10 +426,10 @@ def main():
                 d_latex = sp.latex(D_sym)
                 n_latex = sp.latex(N_sym)
                 if n_latex == "1":
-                    st.latex(rf"1) \quad K(s) = -\left({d_latex}\right)")
+                    st.latex(rf"1) \quad K(s) = -P(s)^{{-1}} = -\left({d_latex}\right)")
                     st.latex(r"2) \quad \frac{dK}{ds} = -D'(s) = 0 \implies D'(s) = 0")
                 else:
-                    st.latex(rf"1) \quad K(s) = -\frac{{{d_latex}}}{{{n_latex}}}")
+                    st.latex(rf"1) \quad K(s) = -P(s)^{{-1}} = -\frac{{{d_latex}}}{{{n_latex}}}")
                     st.latex(r"2) \quad \frac{dK}{ds} = -\frac{D'(s)N(s) - D(s)N'(s)}{[N(s)]^2} = 0 \implies D'(s)N(s) - D(s)N'(s) = 0")
                     st.latex(rf"({sp.latex(D_der_sym)})({n_latex}) - ({d_latex})({sp.latex(N_der_sym)}) = 0")
                 
