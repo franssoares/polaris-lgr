@@ -107,6 +107,41 @@ def get_char_poly_latex(D_coeffs, N_coeffs):
             res += f" + {t}"
     return res
 
+def format_root(r):
+    r_rounded = np.round(r, 4)
+    if abs(np.imag(r_rounded)) < 1e-5:
+        return f"{format_frac(np.real(r_rounded))}"
+    else:
+        sign = "+" if np.imag(r_rounded) > 0 else "-"
+        return f"{format_frac(np.real(r_rounded))} {sign} {format_frac(abs(np.imag(r_rounded)))}j"
+
+def get_block_latex(n_lat, d_lat, is_g=False):
+    if is_g:
+        if n_lat == "1" and d_lat == "1": return "1"
+        if d_lat == "1": return n_lat
+        return r"\frac{" + n_lat + r"}{" + d_lat + r"}"
+    else:
+        if n_lat == "1" and d_lat == "1": return ""
+        if d_lat == "1": return r"\cdot " + n_lat
+        return r"\cdot \frac{" + n_lat + r"}{" + d_lat + r"}"
+
+def format_eval_poly(poly_coeffs, s_val):
+    terms = []
+    deg = len(poly_coeffs) - 1
+    for i, c in enumerate(poly_coeffs):
+        if c == 0: continue
+        power = deg - i
+        c_str = format_frac(c)
+        if power == 0:
+            terms.append(c_str)
+        else:
+            if power == 1:
+                terms.append(f"({c_str})({format_complex_frac(s_val)})")
+            else:
+                terms.append(f"({c_str})({format_complex_frac(s_val)})^{{{power}}}")
+    if not terms: return "0"
+    return " + ".join(terms).replace("+ -", "- ")
+
 def main():
     st.markdown(
         """
