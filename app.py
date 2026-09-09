@@ -442,19 +442,20 @@ def main():
                         st.markdown("• Nenhum candidato encontrado.")
                     else:
                         for c in candidates:
+                            idx = c["index"]
                             s_str = format_complex_frac(c["s_val"])
                             K_str = format_complex_frac(c["K_val"])
                             if c["is_valid"]:
                                 if c["K_real"] < 1e-5:
-                                    st.markdown(f"• $s = {s_str}$ ($K = {K_str}$) $\\to$ **Válido (partida trivial)**")
+                                    st.markdown(f"• $s_{{{idx}}} = {s_str}$ ($K(s_{{{idx}}}) = {K_str}$) $\\to$ **Válido (partida trivial)**")
                                 elif np.isinf(c["K_real"]) or c["K_real"] > 1e10:
-                                    st.markdown(f"• $s = {s_str}$ ($K \\to \\infty$) $\\to$ **Válido (chegada trivial)**")
+                                    st.markdown(f"• $s_{{{idx}}} = {s_str}$ ($K(s_{{{idx}}}) \\to \\infty$) $\\to$ **Válido (chegada trivial)**")
                                 else:
-                                    st.markdown(f"• $s = {s_str}$ ($K = {K_str}$) $\\to$ **Válido**")
+                                    st.markdown(f"• $s_{{{idx}}} = {s_str}$ ($K(s_{{{idx}}}) = {K_str}$) $\\to$ **Válido**")
                             else:
                                 reason = c.get("reason_invalid", "Não pertence ao LGR.")
-                                st.markdown(f"• $s = {s_str}$ ($K = {K_str}$) $\\to$ **Descartado** ({reason})")
-                
+                                st.markdown(f"• $s_{{{idx}}} = {s_str}$ ($K(s_{{{idx}}}) = {K_str}$) $\\to$ **Descartado** ({reason})")
+
                 # Passo 9
                 st.markdown("**9. Cruzamento com o eixo jω (Routh-Hurwitz)**")
                 st.markdown(f"Condição de estabilidade gerada para: $D(s) + K \\cdot N(s) = 0$")
