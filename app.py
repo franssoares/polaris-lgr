@@ -49,6 +49,64 @@ def format_complex_frac(val, tol=1e-5):
         
     return f"{format_frac(r, tol)} {sign} {i_str}"
 
+def get_char_poly_latex(D_coeffs, N_coeffs):
+    max_len = max(len(D_coeffs), len(N_coeffs))
+    D_pad = np.pad(D_coeffs, (max_len - len(D_coeffs), 0))
+    N_pad = np.pad(N_coeffs, (max_len - len(N_coeffs), 0))
+
+    terms = []
+    for i in range(max_len):
+        power = max_len - 1 - i
+        d_val = D_pad[i]
+        n_val = N_pad[i]
+
+        if d_val == 0 and n_val == 0:
+            continue
+
+        term_parts = []
+        if d_val != 0:
+            term_parts.append(f"{format_frac(d_val)}")
+        if n_val != 0:
+            sign = (
+                "+"
+                if n_val > 0 and d_val != 0
+                else ("" if n_val > 0 else "-")
+            )
+            abs_n = abs(n_val)
+            n_str = f"{format_frac(abs_n)}" if abs_n != 1 else ""
+            term_parts.append(f"{sign}{n_str}K")
+
+        term_coeff = "".join(term_parts).strip()
+        if d_val != 0 and n_val != 0:
+            term_coeff = f"({term_coeff})"
+
+        if power == 0:
+            terms.append(term_coeff)
+        elif power == 1:
+            if term_coeff == "1":
+                terms.append("s")
+            elif term_coeff == "-1":
+                terms.append("-s")
+            else:
+                terms.append(f"{term_coeff}s")
+        else:
+            if term_coeff == "1":
+                terms.append(f"s^{{{power}}}")
+            elif term_coeff == "-1":
+                terms.append(f"-s^{{{power}}}")
+            else:
+                terms.append(f"{term_coeff}s^{{{power}}}")
+
+    if not terms:
+        return "0"
+    res = terms[0]
+    for t in terms[1:]:
+        if t.startswith("-"):
+            res += f" - {t[1:]}"
+        else:
+            res += f" + {t}"
+    return res
+
 def main():
     st.markdown(
         """
@@ -282,13 +340,6 @@ def main():
                 K_str = f"{format_frac(K_scale)}" if K_scale != 1.0 else ""
                 st.latex(r"P(s) = " + K_str + r"\frac{" + num_fact + r"}{" + den_fact + r"}")
                 st.markdown("**3. Pólos e zeros de malha aberta**")
-                def format_root(r):
-                    r_rounded = np.round(r, 4)
-                    if abs(np.imag(r_rounded)) < 1e-5:
-                        return f"{format_frac(np.real(r_rounded))}"
-                    else:
-                        sign = "+" if np.imag(r_rounded) > 0 else "-"
-                        return f"{format_frac(np.real(r_rounded))} {sign} {format_frac(abs(np.imag(r_rounded)))}j"
                 p_list = [f"p_{{{i+1}}} = {format_root(p)}" for i, p in enumerate(sorted(poles, key=lambda x: (np.real(x), np.imag(x))))]
                 z_list = [f"z_{{{i+1}}} = {format_root(z)}" for i, z in enumerate(sorted(zeros, key=lambda x: (np.real(x), np.imag(x))))]
                 st.markdown("• Polos: " + (", ".join([f"${p}$" for p in p_list]) if p_list else "Nenhum"))
@@ -343,7 +394,6 @@ def main():
                 st.markdown(f"Condição de estabilidade gerada para: $D(s) + K \\cdot N(s) = 0$")
                 routh_table = routh_result.get("table", [])
                 if routh_table:
-                    import sympy as sp
                     mat_str = "\\\\ ".join([" & ".join([str(sp.simplify(item)) for item in row]) for row in routh_table])
                     st.latex(r"\begin{bmatrix}" + mat_str + r"\end{bmatrix}")
                 if not omega_vals:
@@ -479,19 +529,6 @@ def main():
                     "Substituindo os blocos $G(s)$ e $H(s)$ separadamente na equação característica:"
                 )
 
-                def get_block_latex(n_lat, d_lat, is_g=False):
-                    prefix = "K " if is_g else ""
-                    if n_lat == "1" and d_lat == "1":
-                        return f"{prefix}1" if prefix else "1"
-                    elif d_lat == "1":
-                        return (
-                            f"{prefix}({n_lat})"
-                            if ("+" in n_lat or "-" in n_lat)
-                            else f"{prefix}{n_lat}"
-                        )
-                    else:
-                        return f"{prefix}\\frac{{{n_lat}}}{{{d_lat}}}"
-
                 g_latex = get_block_latex(ng_latex, dg_latex, True)
                 h_latex = get_block_latex(nh_latex, dh_latex, False)
 
@@ -541,63 +578,6 @@ def main():
                 )
                 st.latex(r"\boxed{ 1 + K \frac{" + num_str + r"}{" + den_str + r"} = 0 }")
 
-                def get_char_poly_latex(D_coeffs, N_coeffs):
-                    max_len = max(len(D_coeffs), len(N_coeffs))
-                    D_pad = np.pad(D_coeffs, (max_len - len(D_coeffs), 0))
-                    N_pad = np.pad(N_coeffs, (max_len - len(N_coeffs), 0))
-
-                    terms = []
-                    for i in range(max_len):
-                        power = max_len - 1 - i
-                        d_val = D_pad[i]
-                        n_val = N_pad[i]
-
-                        if d_val == 0 and n_val == 0:
-                            continue
-
-                        term_parts = []
-                        if d_val != 0:
-                            term_parts.append(f"{format_frac(d_val)}")
-                        if n_val != 0:
-                            sign = (
-                                "+"
-                                if n_val > 0 and d_val != 0
-                                else ("" if n_val > 0 else "-")
-                            )
-                            abs_n = abs(n_val)
-                            n_str = f"{format_frac(abs_n)}" if abs_n != 1 else ""
-                            term_parts.append(f"{sign}{n_str}K")
-
-                        term_coeff = "".join(term_parts).strip()
-                        if d_val != 0 and n_val != 0:
-                            term_coeff = f"({term_coeff})"
-
-                        if power == 0:
-                            terms.append(term_coeff)
-                        elif power == 1:
-                            if term_coeff == "1":
-                                terms.append("s")
-                            elif term_coeff == "-1":
-                                terms.append("-s")
-                            else:
-                                terms.append(f"{term_coeff}s")
-                        else:
-                            if term_coeff == "1":
-                                terms.append(f"s^{{{power}}}")
-                            elif term_coeff == "-1":
-                                terms.append(f"-s^{{{power}}}")
-                            else:
-                                terms.append(f"{term_coeff}s^{{{power}}}")
-
-                    if not terms:
-                        return "0"
-                    res = terms[0]
-                    for t in terms[1:]:
-                        if t.startswith("-"):
-                            res += f" - {t[1:]}"
-                        else:
-                            res += f" + {t}"
-                    return res
 
                 char_poly_str = get_char_poly_latex(D_coeffs, N_coeffs)
 
@@ -615,14 +595,6 @@ def main():
                 st.latex(
                     r"P(s) = " + K_str + r"\frac{" + num_fact + r"}{" + den_fact + r"}"
                 )
-
-                def format_root(r):
-                    r_rounded = np.round(r, 4)
-                    if abs(np.imag(r_rounded)) < 1e-5:
-                        return f"{format_frac(np.real(r_rounded))}"
-                    else:
-                        sign = "+" if np.imag(r_rounded) > 0 else "-"
-                        return f"{format_frac(np.real(r_rounded))} {sign} {format_frac(abs(np.imag(r_rounded)))}j"
 
                 z_list = [
                     f"z_{{{i+1}}} = {format_root(z)}"
@@ -2578,33 +2550,6 @@ def main():
                     rf"substituímos o ponto $s = s_0 = {s0_str}$ e o ganho $K = {format_frac(K_val)}$ diretamente na Equação Característica:"
                 )
                 st.latex(r"P(s) = D(s) + K \cdot N(s) = 0")
-
-                def format_eval_poly(poly_coeffs, s_val):
-                    deg = len(poly_coeffs) - 1
-                    terms = []
-                    for i, c in enumerate(poly_coeffs):
-                        if abs(c) < 1e-9:
-                            continue
-                        p = deg - i
-                        c_str = format_frac(c)
-                        s_str = f"({format_complex_frac(s_val)})"
-                        if p == 0:
-                            terms.append(f"{c_str}")
-                        elif p == 1:
-                            if c == 1:
-                                terms.append(f"{s_str}")
-                            elif c == -1:
-                                terms.append(f"-{s_str}")
-                            else:
-                                terms.append(f"{c_str} \\cdot {s_str}")
-                        else:
-                            if c == 1:
-                                terms.append(f"{s_str}^{{{p}}}")
-                            elif c == -1:
-                                terms.append(f"-{s_str}^{{{p}}}")
-                            else:
-                                terms.append(f"{c_str} \\cdot {s_str}^{{{p}}}")
-                    return " + ".join(terms) if terms else "0"
 
                 d_eval_str = format_eval_poly(D_coeffs, s0)
                 n_eval_str = format_eval_poly(N_coeffs, s0)
