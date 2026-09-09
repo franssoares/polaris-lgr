@@ -415,16 +415,34 @@ def main():
                         st.latex(f"\\theta_{{{q}}} = \\frac{{180^\\circ(2({q})+1)}}{{|n_P - n_Z|}} = {format_frac(a)}^\\circ")
                 st.markdown("**8. Pontos de Saída/Entrada**")
                 st.latex(r"1) \quad K = -P(s)^{-1} \qquad 2) \quad \frac{dK}{ds} = 0")
-                if not valid_breakaway:
-                    st.markdown("• Não há pontos de saída/entrada válidos.")
+                
+                U_simp = breakaway_details["U_simp"]
+                candidates = breakaway_details["candidates"]
+                is_constant_deriv = breakaway_details["is_constant_deriv"]
+                
+                st.markdown("Derivando e igualando a zero:")
+                if is_constant_deriv:
+                    st.latex(rf"{sp.latex(U_simp)} = 0 \implies \text{{Sem raízes (Não há candidatos)}}")
                 else:
-                    for pt in valid_breakaway:
-                        if pt[1] < 1e-5:
-                            st.markdown(f"• $s = {format_frac(pt[0])}$ ($K = {format_frac(pt[1])}$) — **(Pólo múltiplo — partida trivial)**")
-                        elif np.isinf(pt[1]) or pt[1] > 1e10:
-                            st.markdown(f"• $s = {format_frac(pt[0])}$ ($K \\to \\infty$) — **(Zero múltiplo — chegada trivial)**")
-                        else:
-                            st.markdown(f"• $s = {format_frac(pt[0])}$ ($K = {format_frac(pt[1])}$)")
+                    st.latex(rf"{sp.latex(U_simp)} = 0")
+                    if not candidates:
+                        st.markdown("• Nenhum candidato encontrado.")
+                    else:
+                        for c in candidates:
+                            s_str = format_complex_frac(c["s_val"])
+                            K_str = format_complex_frac(c["K_val"])
+                            if c["is_valid"]:
+                                if c["K_real"] < 1e-5:
+                                    st.markdown(f"• $s = {s_str}$ ($K = {K_str}$) $\\to$ **Válido (partida trivial)**")
+                                elif np.isinf(c["K_real"]) or c["K_real"] > 1e10:
+                                    st.markdown(f"• $s = {s_str}$ ($K \\to \\infty$) $\\to$ **Válido (chegada trivial)**")
+                                else:
+                                    st.markdown(f"• $s = {s_str}$ ($K = {K_str}$) $\\to$ **Válido**")
+                            else:
+                                reason = c.get("reason_invalid", "Não pertence ao LGR.")
+                                st.markdown(f"• $s = {s_str}$ ($K = {K_str}$) $\\to$ **Descartado** ({reason})")
+                
+                # Passo 9
                 st.markdown("**9. Cruzamento com o eixo jω (Routh-Hurwitz)**")
                 st.markdown(f"Condição de estabilidade gerada para: $D(s) + K \\cdot N(s) = 0$")
                 routh_table = routh_result.get("table", [])
