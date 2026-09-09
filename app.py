@@ -414,7 +414,6 @@ def main():
                     for q, a in enumerate(angles_A):
                         st.latex(f"\\theta_{{{q}}} = \\frac{{180^\\circ(2({q})+1)}}{{|n_P - n_Z|}} = {format_frac(a)}^\\circ")
                 st.markdown("**8. Pontos de Saída/Entrada**")
-                import sympy as sp
                 D_sym = breakaway_details["D_sym"]
                 N_sym = breakaway_details["N_sym"]
                 D_der_sym = breakaway_details["D_der_sym"]
