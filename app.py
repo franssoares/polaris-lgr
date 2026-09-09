@@ -467,6 +467,40 @@ def main():
                 crossings_data = routh_result.get("crossings_data", [])
                 if not crossings_data:
                     st.markdown("• Não cruza o eixo imaginário (para $K > 0$).")
+                    st.markdown("**Motivo (Análise da Primeira Coluna):**")
+                    st.markdown("Para haver um cruzamento marginal, algum elemento da 1ª coluna deve se anular para $K > 0$ gerando raízes puramente imaginárias na Eq. Auxiliar:")
+                    degree = routh_result["degree"]
+                    for i in range(1, degree + 1):
+                        power = degree - i
+                        expr = sp.simplify(routh_table[i][0])
+                        K_syms = [s for s in expr.free_symbols if str(s) == 'K']
+                        if K_syms:
+                            K_sym = K_syms[0]
+                            sols = sp.solve(expr, K_sym)
+                            if not sols:
+                                st.latex(rf"\\text{{Linha }} s^{{{power}}}: \\quad {sp.latex(expr)} = 0 \\implies \\text{{Sem solução}}")
+                                continue
+                            for sol in sols:
+                                if sol.is_real:
+                                    if float(sol) <= 0:
+                                        st.latex(rf"\\text{{Linha }} s^{{{power}}}: \\quad {sp.latex(expr)} = 0 \\implies K = {format_frac(float(sol))} \\text{{ (inválido, pois }} K \\le 0 \\text{{)}}")
+                                    else:
+                                        st.latex(rf"\\text{{Linha }} s^{{{power}}}: \\quad {sp.latex(expr)} = 0 \\implies K = {format_frac(float(sol))}")
+                                        aux_power = power + 1
+                                        aux_row = routh_table[degree - aux_power]
+                                        s_sym = sp.symbols("s")
+                                        aux_eq = sum(aux_row[j] * s_sym**(aux_power - 2*j) for j in range(len(aux_row)))
+                                        aux_eq_sub = aux_eq.subs(K_sym, sol)
+                                        st.markdown(rf"$\\hookrightarrow$ Eq. Aux: $A(s) = {sp.latex(sp.together(aux_eq_sub))} = 0$ não gera $\\pm j\\omega$.")
+                        else:
+                            try:
+                                val = float(expr)
+                                if val > 0:
+                                    st.latex(rf"\\text{{Linha }} s^{{{power}}}: \\quad {sp.latex(expr)} > 0 \\text{{ (constante, não zera)}}")
+                                else:
+                                    st.latex(rf"\\text{{Linha }} s^{{{power}}}: \\quad {sp.latex(expr)} \\le 0 \\text{{ (instável)}}")
+                            except:
+                                st.latex(rf"\\text{{Linha }} s^{{{power}}}: \\quad {sp.latex(expr)} \\neq 0")
                 else:
                     for idx_c, data in enumerate(crossings_data):
                         power = data["s_power"]
