@@ -437,7 +437,7 @@ def main():
                     for w in omega_vals:
                         st.markdown(f"• Cruzamento em $s = \\pm {format_frac(w)}j$ para $K = {format_frac(routh_result['k_crit']['val'])} $")
                 st.markdown("**10. Ângulos de Partida e Chegada**")
-                dep_arr = calculate_departure_arrival_angles(poles, zeros, N_coeffs, D_coeffs)
+                dep_arr = calculate_departure_arrival_angles(poles, zeros)
                 if not dep_arr.get("has_complex"):
                     st.markdown("• Não há pólos ou zeros complexos.")
                 else:
