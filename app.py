@@ -142,7 +142,7 @@ def format_eval_poly(poly_coeffs, s_val):
     if not terms: return "0"
     return " + ".join(terms).replace("+ -", "- ")
 
-def render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax, asintotas_data):
+def render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax):
     extra_K = []
     if valid_breakaway:
         extra_K.extend([float(k) for _, k in valid_breakaway if k > 0])
@@ -247,6 +247,9 @@ def render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs,
             )
     
     if nP != nZ:
+        sigma_A = (np.sum(poles) - np.sum(zeros)) / (nP - nZ)
+        angles_A = [(2 * q + 1) * 180 / abs(nP - nZ) for q in range(abs(nP - nZ))]
+        length_max = max(2.0, max(xmax - xmin, ymax - ymin) * 0.8)
         fig_final.add_trace(
             go.Scatter(
                 x=[np.real(sigma_A)],
@@ -814,7 +817,7 @@ def main():
                         sum_p = " + ".join(f"{format_frac(a)}°" for a in zd["angles_p"]) or "0°"
                         st.latex(f"\\theta_{{a, {format_complex_frac(zd['zero'])}}} = 180^\\circ - ({sum_z}) + ({sum_p}) = {format_frac(zd['arrival_angle'])}^\\circ")
                 st.markdown("**Esboço Final do LGR:**")
-                render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax, asintotas_data)
+                render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax)
                 st.markdown("---")
                 
             if show_item_b:
@@ -2984,7 +2987,7 @@ def main():
             # Gráfico Final
             st.markdown("## Gráfico Final do LGR")
         
-            render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax, asintotas_data)
+            render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax)
 
         st.markdown(
             """
