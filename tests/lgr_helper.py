@@ -6,7 +6,12 @@ import os
 
 # Add the parent directory to sys.path to import lgr_math
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from lgr_math import find_breakaway_points, build_routh_hurwitz, simulate_root_locus
+from lgr_math import (
+    find_breakaway_points,
+    build_routh_hurwitz,
+    simulate_root_locus,
+    evaluate_test_point_details,
+)
 
 
 def evaluate_lgr(
@@ -103,29 +108,9 @@ def evaluate_lgr(
     res["departure_angles"] = departure_angles
     res["arrival_angles"] = arrival_angles
 
-    # Passo 11 & 12: Critério de ângulo e ganho K (we will provide a helper function for any s0)
+    # Passo 11 & 12: Critério de ângulo e ganho K
     def test_point(s0):
-        angles_z = [np.degrees(np.angle(s0 - z)) for z in zeros]
-        angles_p = [np.degrees(np.angle(s0 - p)) for p in poles]
-        total_angle = sum(angles_z) - sum(angles_p)
-        normalized_angle = total_angle % 360
-        if normalized_angle < 0:
-            normalized_angle += 360
-        is_lgr = np.isclose(normalized_angle, 180, atol=5.0)
-
-        dist_z = [abs(s0 - z) for z in zeros]
-        dist_p = [abs(s0 - p) for p in poles]
-        # revert mut 7
-        K_val = (np.prod(dist_p) if dist_p else 1.0) / (
-            np.prod(dist_z) if dist_z else 1.0
-        )
-
-        return {
-            "total_angle": total_angle,
-            "normalized_angle": normalized_angle,
-            "is_lgr": is_lgr,
-            "K": K_val,
-        }
+        return evaluate_test_point_details(s0, poles, zeros, list(D_coeffs), list(N_coeffs))
 
     res["test_point"] = test_point
 
