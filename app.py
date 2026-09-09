@@ -606,7 +606,7 @@ def main():
                                         "transition": {"duration": 0},
                                     },
                                 ],
-                                "label": "▶ Play",
+                                "label": " Play",
                                 "method": "animate",
                             },
                             {
@@ -618,7 +618,7 @@ def main():
                                         "transition": {"duration": 0},
                                     },
                                 ],
-                                "label": "⏸ Pause",
+                                "label": " Pause",
                                 "method": "animate",
                             },
                         ],
@@ -1085,10 +1085,10 @@ def main():
                             )
                         )
                         st.success(
-                            f"✅ **Válido:** {tipo_nome} em $s = {s_str}$ com ganho $K = {format_frac(k_real)}$."
+                            f" **Válido:** {tipo_nome} em $s = {s_str}$ com ganho $K = {format_frac(k_real)}$."
                         )
                     else:
-                        st.warning(f"❌ **Descartado:** {cand['reason_invalid']}")
+                        st.warning(f" **Descartado:** {cand['reason_invalid']}")
 
                 # 6. Resumo Consolidado
                 st.markdown("---")
@@ -1134,7 +1134,7 @@ def main():
                 st.markdown("---")
                 st.markdown(r"**7. Visualização Gráfica dos Pontos:**")
                 tab_plane, tab_curve = st.tabs(
-                    ["📍 Localização no Plano s", "📈 Curva de Ganho K(σ) no Eixo Real"]
+                    [" Localização no Plano s", " Curva de Ganho K(σ) no Eixo Real"]
                 )
 
                 with tab_plane:
@@ -1402,7 +1402,7 @@ def main():
 
             routh_steps = routh_result.get("routh_steps", [])
             if routh_steps:
-                with st.expander("🔍 Ver formulação detalhada de cada termo calculado da tabela", expanded=False):
+                with st.expander(" Ver formulação detalhada de cada termo calculado da tabela", expanded=False):
                     for step in routh_steps:
                         p_pow = step["row_power"]
                         c_idx = step["col_idx"]
@@ -1481,7 +1481,7 @@ def main():
                     else:
                         st.latex(rf"{sp.latex(t_expr)} = 0 \implies K_{{crítico}} = {format_frac(k_crit)}")
 
-                    st.success(rf"✅ **Ganho Crítico:** $K_{{crítico}} = {format_frac(k_crit)}$")
+                    st.success(rf" **Ganho Crítico:** $K_{{crítico}} = {format_frac(k_crit)}$")
 
                     # b) Equação Auxiliar
                     st.markdown(f"**b) Montagem da Equação Auxiliar ($A(s) = 0$):**")
@@ -1515,14 +1515,14 @@ def main():
                             st.latex(rf"s^2 + {format_frac(w**2)} = 0 \implies s = \pm {format_frac(w)}j \implies \omega = {format_frac(w)} \text{{ rad/s}}")
 
                     st.info(
-                        f"📍 **Pontos de Cruzamento no Eixo Imaginário:** "
-                        + ", ".join([f"$s = \\pm {format_frac(w)}j$ ($\omega = {format_frac(w)}$ rad/s)" for w in omegas])
+                        f" **Pontos de Cruzamento no Eixo Imaginário:** "
+                        + ", ".join([f"$s = \\pm {format_frac(w)}j$ ($\\omega = {format_frac(w)}$ rad/s)" for w in omegas])
                         + f" para $K = {format_frac(k_crit)}$."
                     )
 
                     # d) Comprovação Matemática do Resultado (Prova Real)
                     st.markdown("---")
-                    st.markdown(rf"#### 🎯 Comprovação Matemática do Resultado (Prova Real):")
+                    st.markdown(rf"####  Comprovação Matemática do Resultado (Prova Real):")
                     st.markdown(
                         r"Para comprovar matematicamente que as frequências encontradas e o ganho crítico satisfazem rigorosamente as condições de fechamento do sistema, aplicamos duas comprovações analíticas independentes:"
                     )
@@ -1545,7 +1545,7 @@ def main():
                         st.latex(rf"P(s)\Big|_{{K = {format_frac(k_crit)}}} = {sp.latex(p_sub_sym)} = 0")
 
                         rows_md = [
-                            "| Termo ($a_k s^k$) | Substituição com $s = j\omega$ | Valor Calculado |",
+                            "| Termo ($a_k s^k$) | Substituição com $s = j\\omega$ | Valor Calculado |",
                             "| :--- | :--- | :--- |",
                         ]
                         for tb in t_break:
@@ -1602,7 +1602,7 @@ def main():
                         )
             else:
                 st.markdown(r"**Nenhum cruzamento com o eixo imaginário foi identificado para $K > 0$.**")
-                st.markdown(r"#### 🎯 Comprovação Matemática de Ausência de Cruzamento:")
+                st.markdown(r"####  Comprovação Matemática de Ausência de Cruzamento:")
 
                 # Comprovação Routh
                 st.markdown(r"**a) Comprovação pelo Critério de Routh-Hurwitz:**")
@@ -1790,7 +1790,7 @@ def main():
             if not has_complex:
                 st.markdown("---")
                 st.info(
-                    "ℹ️ **Não aplicável:** O sistema não possui polos nem zeros complexos conjugados ($\text{Im} \neq 0$)."
+                    "️ **Não aplicável:** O sistema não possui polos nem zeros complexos conjugados ($\text{Im} \neq 0$)."
                 )
                 st.markdown(
                     r"**Fundamentação Teórica:** "
@@ -1850,7 +1850,7 @@ def main():
                                 + f" = {format_frac(sum_p)}^\\circ"
                             )
                         else:
-                            st.markdown("*(Não há outros polos no sistema)* $\implies \sum \theta_{outros\_polos} = 0^\circ$.")
+                            st.markdown(r"*(Não há outros polos no sistema)* $\implies \sum \theta_{outros\_polos} = 0^\circ$.")
 
                         # b) Vetores dos zeros
                         st.markdown(r"**b) Vetores partindo dos zeros até $p$ ($\vec{w}_j = p - z_j$):**")
@@ -1893,7 +1893,7 @@ def main():
                         )
 
                         # e) Comprovação Matemática
-                        st.markdown(r"**d) 🎯 Comprovação Matemática do Resultado (Prova Real):**")
+                        st.markdown(r"**d)  Comprovação Matemática do Resultado (Prova Real):**")
                         st.markdown(
                             r"Para comprovar matematicamente que o ramo do LGR emerge na direção calculada, testamos um ponto infinitesimalmente deslocado ao longo de $\theta_p$:"
                         )
@@ -1966,7 +1966,7 @@ def main():
                                 + f" = {format_frac(sum_p)}^\\circ"
                             )
                         else:
-                            st.markdown("*(Não há polos no sistema)* $\implies \sum \theta_p = 0^\circ$.")
+                            st.markdown(r"*(Não há polos no sistema)* $\implies \sum \theta_p = 0^\circ$.")
 
                         # b) Vetores dos outros zeros
                         st.markdown(r"**b) Vetores partindo dos demais zeros até $z$ ($\vec{w}_j = z - z_j$):**")
@@ -2009,7 +2009,7 @@ def main():
                         )
 
                         # e) Comprovação Matemática
-                        st.markdown(r"**d) 🎯 Comprovação Matemática do Resultado (Prova Real):**")
+                        st.markdown(r"**d)  Comprovação Matemática do Resultado (Prova Real):**")
                         st.markdown(
                             r"Para comprovar matematicamente que o ramo do LGR incide no zero na direção calculada, testamos um ponto infinitesimalmente deslocado ao longo de $\theta_z$:"
                         )
@@ -2236,7 +2236,7 @@ def main():
                 sum_p_terms = " + ".join([f"({format_frac(vp['angle_deg'])}^\\circ)" for vp in vecs_p])
                 st.latex(rf"\sum_{{i=1}}^{{nP}} \theta_{{p_i}} = {sum_p_terms} = {format_frac(sum_p)}^\circ")
             else:
-                st.markdown("*(Não há polos no sistema)* $\implies \sum \theta_p = 0^\circ$.")
+                st.markdown(r"*(Não há polos no sistema)* $\implies \sum \theta_p = 0^\circ$.")
 
             # 2. Vetores a partir dos zeros
             st.markdown("---")
@@ -2260,7 +2260,7 @@ def main():
                 sum_z_terms = " + ".join([f"({format_frac(vz['angle_deg'])}^\\circ)" for vz in vecs_z])
                 st.latex(rf"\sum_{{j=1}}^{{nZ}} \phi_{{z_j}} = {sum_z_terms} = {format_frac(sum_z)}^\circ")
             else:
-                st.markdown("*(Não há zeros no sistema)* $\implies \sum \phi_z = 0^\circ$.")
+                st.markdown(r"*(Não há zeros no sistema)* $\implies \sum \phi_z = 0^\circ$.")
 
             # 3. Substituição e Fase Resultante
             st.markdown("---")
@@ -2277,26 +2277,25 @@ def main():
             st.markdown(r"### 4. Veredito de Pertinência ao LGR:")
             if is_pole:
                 st.success(
-                    rf"✅ **O ponto $s_0 = {s0_str}$ coincide exatamente com o polo $p_{{{test_details['coincident_pole_idx']}}}$.** "
+                    rf" **O ponto $s_0 = {s0_str}$ coincide exatamente com o polo $p_{{{test_details['coincident_pole_idx']}}}$.** "
                     rf"No LGR, os ramos partem dos polos com ganho $K = 0$, portanto o ponto pertence trivialmente ao LGR."
                 )
             elif is_zero:
                 st.success(
-                    rf"✅ **O ponto $s_0 = {s0_str}$ coincide exatamente com o zero $z_{{{test_details['coincident_zero_idx']}}}$.** "
+                    rf" **O ponto $s_0 = {s0_str}$ coincide exatamente com o zero $z_{{{test_details['coincident_zero_idx']}}}$.** "
                     rf"No LGR, os ramos incidem nos zeros quando o ganho $K \to \infty$, portanto o ponto pertence trivialmente ao LGR."
+                )
             elif is_lgr:
                 st.success(
-                    rf"✅ **O ponto $s_0 = {s0_str}$ PERTENCE ao Lugar Geométrico das Raízes!**<br>"
+                    rf" **O ponto $s_0 = {s0_str}$ PERTENCE ao Lugar Geométrico das Raízes!**<br>"
                     rf"A fase resultante fecha em **${format_frac(norm_angle)}^\circ \approx 180^\circ$**, satisfazendo rigorosamente a condição angular do LGR direto ($K > 0$).",
-                    icon="🎯",
                 )
             else:
                 st.error(
-                    rf"❌ **O ponto $s_0 = {s0_str}$ NÃO PERTENCE ao Lugar Geométrico das Raízes direto!**<br>"
+                    rf" **O ponto $s_0 = {s0_str}$ NÃO PERTENCE ao Lugar Geométrico das Raízes direto!**<br>"
                     rf"A fase resultante é **${format_frac(norm_angle)}^\circ \neq 180^\circ$** (divergência angular de ${format_frac(abs(defic))}^\circ$).",
-                    icon="🚫",
                 )
-                st.markdown(r"#### 📐 Cálculo da Deficiência Angular ($\Delta \theta$):")
+                st.markdown(r"####  Cálculo da Deficiência Angular ($\Delta \theta$):")
                 st.markdown(
                     r"Em projeto de sistemas de controle, a **deficiência angular** representa a contribuição de fase líquida "
                     r"que um controlador/compensador dinâmico (como um Compensador por Avanço de Fase ou PD) deve fornecer em $s_0$ "
@@ -2306,7 +2305,7 @@ def main():
                     rf"\Delta \theta = 180^\circ - \angle G(s_0)H(s_0) = 180^\circ - ({format_frac(total_angle)}^\circ) \equiv {format_frac(defic)}^\circ"
                 )
                 st.info(
-                    rf"💡 **Ação de Projeto Recomendada:** Para tornar $s_0$ um polo de malha fechada dominante, "
+                    rf" **Ação de Projeto Recomendada:** Para tornar $s_0$ um polo de malha fechada dominante, "
                     rf"deve-se projetar um compensador de avanço $G_c(s) = \frac{{s + z_c}}{{s + p_c}}$ com contribuição de fase $\angle G_c(s_0) = {format_frac(defic)}^\circ$."
                 )
 
@@ -2373,7 +2372,7 @@ def main():
 
             # 2. Comprovação Matemática (Prova Real)
             st.markdown("---")
-            st.markdown(r"### 2. 🎯 Comprovação Matemática do Resultado (Prova Real):")
+            st.markdown(r"### 2.  Comprovação Matemática do Resultado (Prova Real):")
             st.markdown(
                 r"Para comprovar analiticamente a exatidão do resultado e verificar se $s_0$ é de fato um polo de malha fechada, "
                 rf"substituímos o ponto $s = s_0 = {s0_str}$ e o ganho $K = {format_frac(K_val)}$ diretamente na Equação Característica:"
@@ -2433,10 +2432,9 @@ def main():
                     r"\boxed{ P(s_0) = 0 + 0j = 0 \quad (\checkmark \textbf{ COMPROVADO}) }"
                 )
                 st.success(
-                    rf"✅ **COMPROVAÇÃO CONCLUÍDA COM SUCESSO!**<br>"
+                    rf" **COMPROVAÇÃO CONCLUÍDA COM SUCESSO!**<br>"
                     rf"A equação característica zera perfeitamente para $s = {s0_str}$ com o ganho $K = {format_frac(K_val)}$. "
                     rf"Isso comprova analiticamente, sem qualquer margem de dúvida, que **$s_0$ é um polo de malha fechada exato**.",
-                    icon="🎉",
                 )
             else:
                 st.latex(
@@ -2453,24 +2451,21 @@ def main():
                     )
                     if abs(np.imag(K_req)) > 1e-4:
                         st.warning(
-                            rf"⚠️ **Ganho Complexo Não-Realizável:** "
+                            rf"️ **Ganho Complexo Não-Realizável:** "
                             rf"Como $\operatorname{{Im}}(K_{{nec}}) = {format_frac(np.imag(K_req))} \neq 0$, "
                             rf"é matematicamente impossível colocar um polo em $s_0$ usando apenas um ganho real $K \in \mathbb{{R}}$. "
                             rf"A equação característica não zera porque há deficiência angular de **${format_frac(defic)}^\circ$**.",
-                            icon="💡",
                         )
                     elif np.real(K_req) < 0:
                         st.warning(
-                            rf"⚠️ **Ganho Negativo:** "
+                            rf"️ **Ganho Negativo:** "
                             rf"Como $K_{{nec}} = {format_frac(np.real(K_req))} < 0$, este ponto só existiria sob realimentação positiva (LGR inverso), "
                             rf"mas **NÃO** no LGR direto com realimentação negativa ($K > 0$).",
-                            icon="💡",
                         )
                 st.error(
-                    rf"❌ **COMPROVAÇÃO DE NÃO-PERTINÊNCIA:**<br>"
+                    rf" **COMPROVAÇÃO DE NÃO-PERTINÊNCIA:**<br>"
                     rf"O resíduo $|P(s_0)| = {format_frac(residual)} \neq 0$ comprova analiticamente por que $s_0$ não pode ser atingido "
                     rf"apenas ajustando o ganho $K$. É estritamente necessária a compensação de fase calculada no Passo 11.",
-                    icon="🔍",
                 )
 
         # Gráfico Final
@@ -2697,7 +2692,7 @@ def main():
                                     "transition": {"duration": 0},
                                 },
                             ],
-                            "label": "▶ Play",
+                            "label": " Play",
                             "method": "animate",
                         },
                         {
@@ -2709,7 +2704,7 @@ def main():
                                     "transition": {"duration": 0},
                                 },
                             ],
-                            "label": "⏸ Pause",
+                            "label": " Pause",
                             "method": "animate",
                         },
                     ],
