@@ -336,7 +336,7 @@ def main():
                 sum_p = test_details["sum_p"]
                 total_angle = test_details["total_angle"]
                 is_lgr = test_details["is_lgr"]
-                K_val = test_details["K_val"]
+                K_val = test_details["K"]
                 
                 sum_z_terms = " + ".join([f"({format_frac(vz['angle_deg'])}°)" for vz in test_details['vecs_z']]) or "0°"
                 sum_p_terms = " + ".join([f"({format_frac(vp['angle_deg'])}°)" for vp in test_details['vecs_p']]) or "0°"
