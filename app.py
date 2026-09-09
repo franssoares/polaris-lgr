@@ -541,7 +541,7 @@ def main():
     )
 
     st.markdown("---")
-    modo = st.radio("Modo de Exibição", ["Completo (Passo a Passo)", "Simplificado (Foco em Prova)"], horizontal=True)
+    modo = st.radio("Modo de Exibição", ["Completo", "Simplificado"], horizontal=True)
     if modo.startswith("Simplificado"):
         tol_deg = st.number_input("Tolerância angular para pertinência (graus)", value=1.0, step=0.1, help="Usado no Item (b) para decidir se o ponto pertence ao LGR.")
     else:
