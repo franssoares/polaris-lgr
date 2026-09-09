@@ -463,11 +463,29 @@ def main():
                 if routh_table:
                     mat_str = "\\\\ ".join([" & ".join([str(sp.simplify(item)) for item in row]) for row in routh_table])
                     st.latex(r"\begin{bmatrix}" + mat_str + r"\end{bmatrix}")
-                if not omega_vals:
+                
+                crossings_data = routh_result.get("crossings_data", [])
+                if not crossings_data:
                     st.markdown("• Não cruza o eixo imaginário (para $K > 0$).")
                 else:
-                    for w in omega_vals:
-                        st.markdown(f"• Cruzamento em $s = \\pm {format_frac(w)}j$ para $K = {format_frac(routh_result['k_crit']['val'])} $")
+                    for idx_c, data in enumerate(crossings_data):
+                        power = data["s_power"]
+                        k_crit = data["k_crit"]
+                        k_solve_steps = data.get("k_solve_steps", {})
+                        t_expr = k_solve_steps.get("together", sp.together(data["row_expr"]))
+                        num_k = k_solve_steps.get("num", t_expr)
+                        aux_eq_sub = data["aux_eq_sub"]
+                        omegas = data["omegas"]
+                
+                        if k_solve_steps.get("den", sp.Integer(1)) not in [1, -1]:
+                            st.latex(rf"\text{{Linha }} s^{{{power}}}: \quad {sp.latex(t_expr)} = 0 \implies {sp.latex(num_k)} = 0 \implies K_{{crit}} = {format_frac(k_crit)}")
+                        else:
+                            st.latex(rf"\text{{Linha }} s^{{{power}}}: \quad {sp.latex(t_expr)} = 0 \implies K_{{crit}} = {format_frac(k_crit)}")
+                
+                        st.latex(rf"\text{{Eq. Auxiliar }}(K={format_frac(k_crit)}): \quad A(s) = {sp.latex(sp.together(aux_eq_sub))} = 0")
+                        for w in omegas:
+                            st.markdown(f"• Raízes do cruzamento: $s = \\pm {format_frac(w)}j$")
+                
                 st.markdown("**10. Ângulos de Partida e Chegada**")
                 dep_arr = calculate_departure_arrival_angles(poles, zeros)
                 if not dep_arr.get("has_complex"):
