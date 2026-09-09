@@ -1,0 +1,95 @@
+        length_max = max(2.0, max_dist * 0.8)
+
+        if modo.startswith("Simplificado"):
+            st.markdown("### Selecione o que deseja calcular:")
+            col_a, col_b = st.columns(2)
+            with col_a:
+                show_item_a = st.checkbox("Item (a) - Esboço do LGR", value=True)
+            with col_b:
+                show_item_b = st.checkbox("Item (b) - Teste de Ponto", value=True)
+            
+            if show_item_a:
+                st.markdown("### ▼ ITEM (a): ESBOÇO DO LGR (Valores Prontos)")
+                
+                def format_root(r):
+                    r_rounded = np.round(r, 4)
+                    if abs(np.imag(r_rounded)) < 1e-5:
+                        return f"{format_frac(np.real(r_rounded))}"
+                    else:
+                        sign = "+" if np.imag(r_rounded) > 0 else "-"
+                        return f"{format_frac(np.real(r_rounded))} {sign} {format_frac(abs(np.imag(r_rounded)))}j"
+                
+                p_list = [f"p_{{{i+1}}} = {format_root(p)}" for i, p in enumerate(sorted(poles, key=lambda x: (np.real(x), np.imag(x))))]
+                z_list = [f"z_{{{i+1}}} = {format_root(z)}" for i, z in enumerate(sorted(zeros, key=lambda x: (np.real(x), np.imag(x))))]
+                st.markdown("**• Polos de malha aberta:** " + (", ".join([f"${p}$" for p in p_list]) if p_list else "Nenhum polo finito."))
+                st.markdown("**• Zeros de malha aberta:** " + (", ".join([f"${z}$" for z in z_list]) if z_list else "Nenhum zero finito."))
+                
+                real_roots = [np.real(r) for r in np.concatenate((poles, zeros)) if abs(np.imag(r)) < 1e-5]
+                real_roots = sorted(real_roots, reverse=True)
+                segments = []
+                for j in range(0, len(real_roots), 2):
+                    start = real_roots[j]
+                    if j + 1 < len(real_roots):
+                        segments.append(f"[{format_frac(real_roots[j+1])}, {format_frac(start)}]")
+                    else:
+                        segments.append(f"(-∞, {format_frac(start)}]")
+                st.markdown("**• Eixo Real:** Segmentos válidos = " + (", ".join(segments) if segments else "Nenhum segmento no eixo real."))
+                
+                ls = max(nP, nZ)
+                st.markdown(f"**• Ramos (LS):** $\\max({nP}, {nZ}) = {ls}$")
+                
+                if nP == nZ:
+                    st.markdown("**• Assíntotas:** Não há assíntotas.")
+                else:
+                    sum_p_str = " + ".join([f"({format_complex_frac(p)})" for p in poles]) or "0"
+                    sum_z_str = " + ".join([f"({format_complex_frac(z)})" for z in zeros]) or "0"
+                    sigma_a_val = format_frac(np.real(sigma_A))
+                    st.markdown(f"**• Assíntotas (Centroide):** $\\sigma_a = \\frac{{[{sum_p_str}] - [{sum_z_str}]}}{{{nP} - {nZ}}} = {sigma_a_val}$")
+                    angles_A = [(2 * q + 1) * 180 / abs(nP - nZ) for q in range(abs(nP - nZ))]
+                    angles_str = ", ".join([f"{format_frac(a)}°" for a in angles_A])
+                    st.markdown(f"**• Assíntotas (Ângulos):** $\\theta_k = {angles_str}$")
+                
+                st.markdown("**• Pontos de Saída/Entrada:**")
+                if not valid_breakaway:
+                    st.markdown("  Não há pontos de saída/entrada válidos.")
+                else:
+                    for pt in valid_breakaway:
+                        if pt[1] < 1e-5:
+                            st.markdown(f"&nbsp;&nbsp; $s = {format_frac(pt[0])}$ ($K = {format_frac(pt[1])}$) — **(Pólo múltiplo — partida trivial)**")
+                        elif np.isinf(pt[1]) or pt[1] > 1e10:
+                            st.markdown(f"&nbsp;&nbsp; $s = {format_frac(pt[0])}$ ($K \\to \\infty$) — **(Zero múltiplo — chegada trivial)**")
+                        else:
+                            st.markdown(f"&nbsp;&nbsp; $s = {format_frac(pt[0])}$ ($K = {format_frac(pt[1])}$)")
+                
+                cross_msg = "Não cruza o eixo imaginário (para $K > 0$)." if not omega_vals else "Cruzamentos em: " + ", ".join([f"$s = \\pm {format_frac(w)}j$ ($K = {format_frac(routh_result['k_crit']['val'])} $)" for w in omega_vals])
+                st.markdown(f"**• Cruzamento Eixo $j\\omega$:** {cross_msg}")
+                
+                st.markdown("---")
+                
+            if show_item_b:
+                st.markdown("### ▼ ITEM (b): TESTE DE PONTO CANDIDATO E GANHO K")
+                s0_str = format_complex_frac(s0)
+                st.markdown(f"**Ponto $s_i$:** Re(s): **{format_frac(s0_real)}** | Im(s): **{format_frac(s0_imag)}** $\\implies (s = {s0_str})$")
+                
+                test_details = evaluate_test_point_details(s0, poles, zeros, D_coeffs, N_coeffs, atol_deg=tol_deg)
+                sum_z = test_details["sum_z"]
+                sum_p = test_details["sum_p"]
+                total_angle = test_details["total_angle"]
+                is_lgr = test_details["is_lgr"]
+                K_val = test_details["K"]
+                
+                sum_z_terms = " + ".join([f"({format_frac(vz['angle_deg'])}°)" for vz in test_details['vecs_z']]) or "0°"
+                sum_p_terms = " + ".join([f"({format_frac(vp['angle_deg'])}°)" for vp in test_details['vecs_p']]) or "0°"
+                
+                st.markdown("**• Critério de Ângulo (Pertinência):**")
+                if is_lgr:
+                    st.latex(f"\\Sigma \\theta_z - \\Sigma \\theta_p = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\\circ \\approx \\pm 180^\\circ")
+                    st.success(f"**RESULTADO: O PONTO PERTENCE AO LGR (Tolerância: ±{tol_deg}°)**")
+                    
+                    st.markdown("**• Critério de Módulo (Cálculo de K):**")
+                    dist_p_terms = " \\cdot ".join([f"{format_frac(vp['dist'])}" for vp in test_details['vecs_p']]) or "1"
+                    dist_z_terms = " \\cdot ".join([f"{format_frac(vz['dist'])}" for vz in test_details['vecs_z']]) or "1"
+                    scale_factor = (abs(N_coeffs[0])/abs(D_coeffs[0])) if D_coeffs[0] != 0 else 1.0
+                    scale_str = f"{format_frac(scale_factor)} \\cdot " if scale_factor != 1.0 else ""
+                    st.latex(f"K = \\frac{{\\prod dist_p}}{{{scale_str}\\prod dist_z}} = \\frac{{{dist_p_terms}}}{{{scale_str}{dist_z_terms}}} = {format_frac(K_val)}")
+                    st.success(f"**RESULTADO: K = {format_frac(K_val)}**")

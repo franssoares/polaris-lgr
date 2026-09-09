@@ -269,8 +269,19 @@ def main():
                 show_item_b = st.checkbox("Item (b) - Teste de Ponto", value=True)
             
             if show_item_a:
-                st.markdown("### ▼ ITEM (a): ESBOÇO DO LGR (Valores Prontos)")
-                
+                st.markdown("### ▼ ITEM (a): ESBOÇO DO LGR")
+                st.markdown("**1. Polinômio característico com K em evidência**")
+                char_poly_str = get_char_poly_latex(D_coeffs, N_coeffs)
+                num_str = format_poly_latex(N_coeffs)
+                den_str = format_poly_latex(D_coeffs)
+                st.latex(r"1 + G(s)H(s) = 1 + K \frac{" + num_str + r"}{" + den_str + r"} = 0 \Rightarrow " + char_poly_str + " = 0")
+                st.markdown("**2. Fatoração de P(s)**")
+                num_fact = format_factored_latex(zeros)
+                den_fact = format_factored_latex(poles)
+                K_scale = N_coeffs[0] / D_coeffs[0] if D_coeffs[0] != 0 else 1.0
+                K_str = f"{format_frac(K_scale)}" if K_scale != 1.0 else ""
+                st.latex(r"P(s) = " + K_str + r"\frac{" + num_fact + r"}{" + den_fact + r"}")
+                st.markdown("**3. Pólos e zeros de malha aberta**")
                 def format_root(r):
                     r_rounded = np.round(r, 4)
                     if abs(np.imag(r_rounded)) < 1e-5:
@@ -278,85 +289,169 @@ def main():
                     else:
                         sign = "+" if np.imag(r_rounded) > 0 else "-"
                         return f"{format_frac(np.real(r_rounded))} {sign} {format_frac(abs(np.imag(r_rounded)))}j"
-                
                 p_list = [f"p_{{{i+1}}} = {format_root(p)}" for i, p in enumerate(sorted(poles, key=lambda x: (np.real(x), np.imag(x))))]
                 z_list = [f"z_{{{i+1}}} = {format_root(z)}" for i, z in enumerate(sorted(zeros, key=lambda x: (np.real(x), np.imag(x))))]
-                st.markdown("**• Polos de malha aberta:** " + (", ".join([f"${p}$" for p in p_list]) if p_list else "Nenhum polo finito."))
-                st.markdown("**• Zeros de malha aberta:** " + (", ".join([f"${z}$" for z in z_list]) if z_list else "Nenhum zero finito."))
-                
+                st.markdown("• Polos: " + (", ".join([f"${p}$" for p in p_list]) if p_list else "Nenhum"))
+                st.markdown("• Zeros: " + (", ".join([f"${z}$" for z in z_list]) if z_list else "Nenhum"))
+                st.markdown("**4. Segmentos do eixo real**")
+                st.markdown("Aplica-se à esquerda de um número ímpar de pólos+zeros no eixo real.")
                 real_roots = [np.real(r) for r in np.concatenate((poles, zeros)) if abs(np.imag(r)) < 1e-5]
                 real_roots = sorted(real_roots, reverse=True)
                 segments = []
+                fig_p34 = create_base_plot(poles, zeros, "Passos 3 e 4: Pólos, Zeros e Eixo Real", xmin, xmax, ymin, ymax)
                 for j in range(0, len(real_roots), 2):
                     start = real_roots[j]
                     if j + 1 < len(real_roots):
                         segments.append(f"[{format_frac(real_roots[j+1])}, {format_frac(start)}]")
+                        fig_p34.add_trace(go.Scatter(x=[start, real_roots[j+1]], y=[0, 0], mode="lines", line=dict(color="#00b4d8", width=5), name="LGR Real"))
                     else:
                         segments.append(f"(-∞, {format_frac(start)}]")
-                st.markdown("**• Eixo Real:** Segmentos válidos = " + (", ".join(segments) if segments else "Nenhum segmento no eixo real."))
-                
+                        end_plot = xmin - (xmax - xmin) * 0.1
+                        fig_p34.add_trace(go.Scatter(x=[start, end_plot], y=[0, 0], mode="lines", line=dict(color="#00b4d8", width=5), name="LGR Real"))
+                        fig_p34.add_annotation(x=end_plot, y=0, ax=start, ay=0, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=1.2, arrowwidth=3, arrowcolor="#00b4d8")
+                st.markdown("• Segmentos válidos: " + (", ".join(segments) if segments else "Nenhum"))
+                st.plotly_chart(fig_p34, width="stretch", config={"scrollZoom": True})
+                st.markdown("**5. Número de lugares separados (Ramos)**")
                 ls = max(nP, nZ)
-                st.markdown(f"**• Ramos (LS):** $\\max({nP}, {nZ}) = {ls}$")
-                
+                st.latex(f"LS = \\max(n_P, n_Z) = \\max({nP}, {nZ}) = {ls}")
+                st.markdown("**6. Simetria**")
+                st.markdown("O LGR é simétrico em relação ao eixo real.")
+                st.markdown("**7. Assíntotas**")
                 if nP == nZ:
-                    st.markdown("**• Assíntotas:** Não há assíntotas.")
+                    st.markdown("• Não há assíntotas.")
                 else:
                     sum_p_str = " + ".join([f"({format_complex_frac(p)})" for p in poles]) or "0"
                     sum_z_str = " + ".join([f"({format_complex_frac(z)})" for z in zeros]) or "0"
                     sigma_a_val = format_frac(np.real(sigma_A))
-                    st.markdown(f"**• Assíntotas (Centroide):** $\\sigma_a = \\frac{{[{sum_p_str}] - [{sum_z_str}]}}{{{nP} - {nZ}}} = {sigma_a_val}$")
+                    st.latex(f"\\sigma_A = \\frac{{\\sum p_i - \\sum z_i}}{{n_P - n_Z}} = \\frac{{[{sum_p_str}] - [{sum_z_str}]}}{{{nP} - {nZ}}} = {sigma_a_val}")
                     angles_A = [(2 * q + 1) * 180 / abs(nP - nZ) for q in range(abs(nP - nZ))]
-                    angles_str = ", ".join([f"{format_frac(a)}°" for a in angles_A])
-                    st.markdown(f"**• Assíntotas (Ângulos):** $\\theta_k = {angles_str}$")
-                
-                st.markdown("**• Pontos de Saída/Entrada:**")
+                    for q, a in enumerate(angles_A):
+                        st.latex(f"\\theta_{{{q}}} = \\frac{{180^\\circ(2({q})+1)}}{{|n_P - n_Z|}} = {format_frac(a)}^\\circ")
+                st.markdown("**8. Pontos de Saída/Entrada**")
+                st.latex(r"1) \quad K = -P(s)^{-1} \qquad 2) \quad \frac{dK}{ds} = 0")
                 if not valid_breakaway:
-                    st.markdown("  Não há pontos de saída/entrada válidos.")
+                    st.markdown("• Não há pontos de saída/entrada válidos.")
                 else:
                     for pt in valid_breakaway:
                         if pt[1] < 1e-5:
-                            st.markdown(f"&nbsp;&nbsp; $s = {format_frac(pt[0])}$ ($K = {format_frac(pt[1])}$) — **(Pólo múltiplo — partida trivial)**")
+                            st.markdown(f"• $s = {format_frac(pt[0])}$ ($K = {format_frac(pt[1])}$) — **(Pólo múltiplo — partida trivial)**")
                         elif np.isinf(pt[1]) or pt[1] > 1e10:
-                            st.markdown(f"&nbsp;&nbsp; $s = {format_frac(pt[0])}$ ($K \\to \\infty$) — **(Zero múltiplo — chegada trivial)**")
+                            st.markdown(f"• $s = {format_frac(pt[0])}$ ($K \\to \\infty$) — **(Zero múltiplo — chegada trivial)**")
                         else:
-                            st.markdown(f"&nbsp;&nbsp; $s = {format_frac(pt[0])}$ ($K = {format_frac(pt[1])}$)")
-                
-                cross_msg = "Não cruza o eixo imaginário (para $K > 0$)." if not omega_vals else "Cruzamentos em: " + ", ".join([f"$s = \\pm {format_frac(w)}j$ ($K = {format_frac(routh_result['k_crit']['val'])} $)" for w in omega_vals])
-                st.markdown(f"**• Cruzamento Eixo $j\\omega$:** {cross_msg}")
-                
+                            st.markdown(f"• $s = {format_frac(pt[0])}$ ($K = {format_frac(pt[1])}$)")
+                st.markdown("**9. Cruzamento com o eixo jω (Routh-Hurwitz)**")
+                st.markdown(f"Condição de estabilidade gerada para: $D(s) + K \\cdot N(s) = 0$")
+                routh_table = routh_result.get("table", [])
+                if routh_table:
+                    import sympy as sp
+                    mat_str = "\\\\ ".join([" & ".join([str(sp.simplify(item)) for item in row]) for row in routh_table])
+                    st.latex(r"\begin{bmatrix}" + mat_str + r"\end{bmatrix}")
+                if not omega_vals:
+                    st.markdown("• Não cruza o eixo imaginário (para $K > 0$).")
+                else:
+                    for w in omega_vals:
+                        st.markdown(f"• Cruzamento em $s = \\pm {format_frac(w)}j$ para $K = {format_frac(routh_result['k_crit']['val'])} $")
+                st.markdown("**10. Ângulos de Partida e Chegada**")
+                dep_arr = calculate_departure_arrival_angles(poles, zeros, N_coeffs, D_coeffs)
+                if not dep_arr.get("has_complex"):
+                    st.markdown("• Não há pólos ou zeros complexos.")
+                else:
+                    for pd in dep_arr.get("pole_details", []):
+                        sum_p = " + ".join(f"{format_frac(a)}°" for a in pd["angles_p"]) or "0°"
+                        sum_z = " + ".join(f"{format_frac(a)}°" for a in pd["angles_z"]) or "0°"
+                        st.latex(f"\\theta_{{d, {format_complex_frac(pd['pole'])}}} = 180^\\circ - ({sum_p}) + ({sum_z}) = {format_frac(pd['departure_angle'])}^\\circ")
+                    for zd in dep_arr.get("zero_details", []):
+                        sum_z = " + ".join(f"{format_frac(a)}°" for a in zd["angles_z"]) or "0°"
+                        sum_p = " + ".join(f"{format_frac(a)}°" for a in zd["angles_p"]) or "0°"
+                        st.latex(f"\\theta_{{a, {format_complex_frac(zd['zero'])}}} = 180^\\circ - ({sum_z}) + ({sum_p}) = {format_frac(zd['arrival_angle'])}^\\circ")
+                st.markdown("**Esboço Final do LGR:**")
+                K_vec, all_roots = simulate_root_locus(D_coeffs, N_coeffs, nP, nZ)
+                fig_simp = create_base_plot(poles, zeros, "Lugar Geométrico das Raízes (Esboço Final)", xmin, xmax, ymin, ymax)
+                for j in range(0, len(real_roots), 2):
+                    start = real_roots[j]
+                    if j + 1 < len(real_roots):
+                        fig_simp.add_trace(go.Scatter(x=[start, real_roots[j+1]], y=[0, 0], mode="lines", line=dict(color="#00b4d8", width=5), name="LGR Real", hoverinfo="skip"))
+                    else:
+                        end_plot = xmin - (xmax - xmin) * 0.1
+                        fig_simp.add_trace(go.Scatter(x=[start, end_plot], y=[0, 0], mode="lines", line=dict(color="#00b4d8", width=5), name="LGR Real", hoverinfo="skip"))
+                        fig_simp.add_annotation(x=end_plot, y=0, ax=start, ay=0, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=1.2, arrowwidth=3, arrowcolor="#00b4d8")
+                if nP != nZ:
+                    for q, a in enumerate(angles_A):
+                        rad = np.radians(a)
+                        t_vals = []
+                        if np.cos(rad) > 1e-5:
+                            t_vals.append((xmax - np.real(sigma_A)) / np.cos(rad))
+                        elif np.cos(rad) < -1e-5:
+                            t_vals.append((xmin - np.real(sigma_A)) / np.cos(rad))
+                        if np.sin(rad) > 1e-5:
+                            t_vals.append((ymax - 0) / np.sin(rad))
+                        elif np.sin(rad) < -1e-5:
+                            t_vals.append((ymin - 0) / np.sin(rad))
+                        t_vals = [t for t in t_vals if t > 0]
+                        t_draw = min(t_vals) if t_vals else max(2.0, max(xmax-xmin, ymax-ymin)*0.8)
+                        head_x = np.real(sigma_A) + t_draw * np.cos(rad)
+                        head_y = t_draw * np.sin(rad)
+                        fig_simp.add_trace(go.Scatter(x=[np.real(sigma_A), head_x], y=[0, head_y], mode="lines", line=dict(color="orange", width=2, dash="dash"), showlegend=False))
+                for branch_idx in range(all_roots.shape[1]):
+                    b_real = np.real(all_roots[:, branch_idx])
+                    b_imag = np.imag(all_roots[:, branch_idx])
+                    fig_simp.add_trace(go.Scatter(x=b_real, y=b_imag, mode="lines", line=dict(width=3, color="#00b4d8"), showlegend=False))
+                st.plotly_chart(fig_simp, width="stretch", config={"scrollZoom": True})
                 st.markdown("---")
                 
             if show_item_b:
                 st.markdown("### ▼ ITEM (b): TESTE DE PONTO CANDIDATO E GANHO K")
                 s0_str = format_complex_frac(s0)
-                st.markdown(f"**Ponto $s_i$:** Re(s): **{format_frac(s0_real)}** | Im(s): **{format_frac(s0_imag)}** $\\implies (s = {s0_str})$")
-                
+                st.markdown(f"**Ponto testado:** $s_i = {s0_str}$")
                 test_details = evaluate_test_point_details(s0, poles, zeros, D_coeffs, N_coeffs, atol_deg=tol_deg)
-                sum_z = test_details["sum_z"]
-                sum_p = test_details["sum_p"]
+                
+                st.markdown("**• Critério de Ângulo (Pertinência ao LGR):**")
+                sum_z_terms_list = []
+                for vz in test_details["vecs_z"]:
+                    st.markdown(f"&nbsp;&nbsp; - Do zero $z_{{{vz['index']}}} = {format_root(vz['zero'])}$ até $s_i$: $\\phi_{{{vz['index']}}} = {format_frac(vz['angle_deg'])}^\\circ$")
+                    sum_z_terms_list.append(f"({format_frac(vz['angle_deg'])}°)")
+                if not test_details["vecs_z"]:
+                    st.markdown("&nbsp;&nbsp; - Não há zeros na malha aberta.")
+                
+                sum_p_terms_list = []
+                for vp in test_details["vecs_p"]:
+                    st.markdown(f"&nbsp;&nbsp; - Do pólo $p_{{{vp['index']}}} = {format_root(vp['pole'])}$ até $s_i$: $\\theta_{{{vp['index']}}} = {format_frac(vp['angle_deg'])}^\\circ$")
+                    sum_p_terms_list.append(f"({format_frac(vp['angle_deg'])}°)")
+                if not test_details["vecs_p"]:
+                    st.markdown("&nbsp;&nbsp; - Não há pólos na malha aberta.")
+                
+                sum_z_terms = " + ".join(sum_z_terms_list) or "0°"
+                sum_p_terms = " + ".join(sum_p_terms_list) or "0°"
                 total_angle = test_details["total_angle"]
                 is_lgr = test_details["is_lgr"]
-                K_val = test_details["K"]
-                
-                sum_z_terms = " + ".join([f"({format_frac(vz['angle_deg'])}°)" for vz in test_details['vecs_z']]) or "0°"
-                sum_p_terms = " + ".join([f"({format_frac(vp['angle_deg'])}°)" for vp in test_details['vecs_p']]) or "0°"
-                
-                st.markdown("**• Critério de Ângulo (Pertinência):**")
                 if is_lgr:
-                    st.latex(f"\\Sigma \\theta_z - \\Sigma \\theta_p = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\\circ \\approx \\pm 180^\\circ")
+                    st.latex(f"\\Sigma \\phi_j - \\Sigma \\theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\\circ \\approx \\pm 180^\\circ")
                     st.success(f"**RESULTADO: O PONTO PERTENCE AO LGR (Tolerância: ±{tol_deg}°)**")
                     
                     st.markdown("**• Critério de Módulo (Cálculo de K):**")
-                    dist_p_terms = " \\cdot ".join([f"{format_frac(vp['dist'])}" for vp in test_details['vecs_p']]) or "1"
-                    dist_z_terms = " \\cdot ".join([f"{format_frac(vz['dist'])}" for vz in test_details['vecs_z']]) or "1"
+                    dist_p_terms_list = []
+                    for vp in test_details["vecs_p"]:
+                        st.markdown(f"&nbsp;&nbsp; - Distância do pólo $p_{{{vp['index']}}}$ até $s_i$: $d_{{p{vp['index']}}} = {format_frac(vp['dist'])} $")
+                        dist_p_terms_list.append(format_frac(vp["dist"]))
+                    dist_z_terms_list = []
+                    for vz in test_details["vecs_z"]:
+                        st.markdown(f"&nbsp;&nbsp; - Distância do zero $z_{{{vz['index']}}}$ até $s_i$: $d_{{z{vz['index']}}} = {format_frac(vz['dist'])} $")
+                        dist_z_terms_list.append(format_frac(vz["dist"]))
+                    
+                    dist_p_terms = " \\cdot ".join(dist_p_terms_list) or "1"
+                    dist_z_terms = " \\cdot ".join(dist_z_terms_list) or "1"
                     scale_factor = (abs(N_coeffs[0])/abs(D_coeffs[0])) if D_coeffs[0] != 0 else 1.0
                     scale_str = f"{format_frac(scale_factor)} \\cdot " if scale_factor != 1.0 else ""
-                    st.latex(f"K = \\frac{{\\prod dist_p}}{{{scale_str}\\prod dist_z}} = \\frac{{{dist_p_terms}}}{{{scale_str}{dist_z_terms}}} = {format_frac(K_val)}")
+                    K_val = test_details["K"]
+                    st.latex(f"K = \\frac{{\\prod d_{{pi}}}}{{{scale_str}\\prod d_{{zj}}}} = \\frac{{{dist_p_terms}}}{{{scale_str}{dist_z_terms}}} = {format_frac(K_val)}")
                     st.success(f"**RESULTADO: K = {format_frac(K_val)}**")
                 else:
-                    st.latex(f"\\Sigma \\theta_z - \\Sigma \\theta_p = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\\circ \\neq \\pm 180^\\circ")
+                    st.latex(f"\\Sigma \\phi_j - \\Sigma \\theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\\circ \\neq \\pm 180^\\circ")
                     st.error(f"**RESULTADO: O PONTO NÃO PERTENCE AO LGR (Fora da tolerância de ±{tol_deg}°)**")
                 
+                st.markdown("**Gráfico dos Vetores:**")
+                fig_test = plot_test_point_vectors(poles, zeros, s0, test_details, xmin, xmax, ymin, ymax)
+                st.plotly_chart(fig_test, width="stretch", config={"scrollZoom": True})
         else:
             # Passo 1
             with st.expander("Passo 1: Equação característica", expanded=True):
