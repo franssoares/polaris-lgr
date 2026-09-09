@@ -142,6 +142,279 @@ def format_eval_poly(poly_coeffs, s_val):
     if not terms: return "0"
     return " + ".join(terms).replace("+ -", "- ")
 
+def render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax, asintotas_data):
+    extra_K = []
+    if valid_breakaway:
+        extra_K.extend([float(k) for _, k in valid_breakaway if k > 0])
+    crossings_data = routh_result.get("crossings_data", [])
+    if crossings_data:
+        extra_K.extend([float(data["k_crit"]) for data in crossings_data if data["k_crit"] > 0])
+    
+    K_vec, all_roots = simulate_root_locus(D_coeffs, N_coeffs, nP, nZ, extra_K=extra_K)
+    
+    fig_final = create_base_plot(
+        poles,
+        zeros,
+        "Lugar Geométrico das Raízes (LGR) Completo",
+        xmin,
+        xmax,
+        ymin,
+        ymax,
+    )
+    
+    palette = plotly.colors.qualitative.Plotly
+    
+    margin_x = (xmax - xmin) * 0.05
+    margin_y = (ymax - ymin) * 0.05
+    box_xmin, box_xmax = xmin + margin_x, xmax - margin_x
+    box_ymin, box_ymax = ymin + margin_y, ymax - margin_y
+    
+    branches_x = []
+    branches_y = []
+    branch_trace_indices = []
+    
+    for i in range(all_roots.shape[1]):
+        branch = all_roots[:, i]
+        vx, vy = [], []
+        hit_infinity_idx = None
+    
+        for pt in branch:
+            if np.isnan(pt):
+                continue
+            x_p, y_p = np.real(pt), np.imag(pt)
+            vx.append(x_p)
+            vy.append(y_p)
+    
+            if hit_infinity_idx is None and (
+                x_p < box_xmin or x_p > box_xmax or y_p < box_ymin or y_p > box_ymax
+            ):
+                hit_infinity_idx = len(vx) - 1
+    
+        branches_x.append(vx)
+        branches_y.append(vy)
+    
+        c = palette[i % len(palette)]
+        if len(vx) > 0:
+            # Inicializa o ramo com apenas o primeiro ponto (K=0) para a animação pintá-lo aos poucos
+            fig_final.add_trace(
+                go.Scatter(
+                    x=[vx[0]],
+                    y=[vy[0]],
+                    mode="lines",
+                    line=dict(color=c, width=3),
+                    name=f"Ramo {i+1}",
+                )
+            )
+            branch_trace_indices.append(len(fig_final.data) - 1)
+    
+        # Seta no meio do caminho (direção a partir do polo)
+        if len(vx) > 10:
+            mid = (
+                len(vx) // 4
+            )  # Pega um ponto a 25% do caminho para mostrar logo de cara
+            fig_final.add_annotation(
+                x=vx[mid],
+                y=vy[mid],
+                ax=vx[mid - 1],
+                ay=vy[mid - 1],
+                xref="x",
+                yref="y",
+                axref="x",
+                ayref="y",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1.5,
+                arrowwidth=2,
+                arrowcolor=c,
+            )
+    
+        # Seta marcando a saída do viewport (indo pro infinito)
+        if hit_infinity_idx is not None and hit_infinity_idx >= 1:
+            fig_final.add_annotation(
+                x=vx[hit_infinity_idx],
+                y=vy[hit_infinity_idx],
+                ax=vx[hit_infinity_idx - 1],
+                ay=vy[hit_infinity_idx - 1],
+                xref="x",
+                yref="y",
+                axref="x",
+                ayref="y",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1.5,
+                arrowwidth=2,
+                arrowcolor=c,
+            )
+    
+    if nP != nZ:
+        fig_final.add_trace(
+            go.Scatter(
+                x=[np.real(sigma_A)],
+                y=[0],
+                mode="markers",
+                marker=dict(symbol="square", size=8, color="orange"),
+                name="Centroide",
+            )
+        )
+        for angle in angles_A:
+            rad = np.radians(angle)
+            dx = length_max * np.cos(rad) * 0.5
+            dy = length_max * np.sin(rad) * 0.5
+            fig_final.add_trace(
+                go.Scatter(
+                    x=[np.real(sigma_A), np.real(sigma_A) + dx],
+                    y=[0, dy],
+                    mode="lines",
+                    line=dict(color="gray", width=1, dash="dash"),
+                    showlegend=False,
+                )
+            )
+    
+    # --- ANIMAÇÃO DAS RAÍZES (K ITERATIVO) ---
+    init_x, init_y = [], []
+    for i in range(all_roots.shape[1]):
+        if branches_x[i]:
+            init_x.append(branches_x[i][0])
+            init_y.append(branches_y[i][0])
+    
+    fig_final.add_trace(
+        go.Scatter(
+            x=init_x,
+            y=init_y,
+            mode="markers",
+            marker=dict(
+                size=12,
+                color="white",
+                symbol="diamond",
+                line=dict(width=2, color="#00b4d8"),
+            ),
+            name="Raízes Dinâmicas",
+            hovertemplate="Raiz: %{x:.3f} + %{y:.3f}j<extra></extra>",
+        )
+    )
+    
+    dynamic_trace_idx = len(fig_final.data) - 1
+    
+    step_frames = max(1, len(K_vec) // 100)
+    frames = []
+    slider_steps = []
+    
+    for i in range(0, len(K_vec), step_frames):
+        k_val = K_vec[i]
+        frame_name = f"frame_{i}"
+    
+        frame_data = []
+    
+        # Atualiza as linhas dos ramos para crescerem até o ponto atual
+        for b_idx, trace_idx in enumerate(branch_trace_indices):
+            limit = min(i + 1, len(branches_x[b_idx]))
+            if limit > 0:
+                frame_data.append(
+                    go.Scatter(
+                        x=branches_x[b_idx][:limit], y=branches_y[b_idx][:limit]
+                    )
+                )
+            else:
+                frame_data.append(go.Scatter(x=[], y=[]))
+    
+        # Atualiza os diamantes (trajetória verdadeira, sem limite geométrico)
+        frame_dyn_x, frame_dyn_y = [], []
+        for b_idx in range(all_roots.shape[1]):
+            limit = min(i, len(branches_x[b_idx]) - 1)
+            if limit >= 0:
+                frame_dyn_x.append(branches_x[b_idx][limit])
+                frame_dyn_y.append(branches_y[b_idx][limit])
+    
+        frame_data.append(go.Scatter(x=frame_dyn_x, y=frame_dyn_y))
+    
+        # A ordem dos traços modificados deve corresponder exatamente a estes índices
+        frame_traces = branch_trace_indices + [dynamic_trace_idx]
+    
+        frames.append(
+            go.Frame(data=frame_data, name=frame_name, traces=frame_traces)
+        )
+    
+        slider_steps.append(
+            {
+                "args": [
+                    [frame_name],
+                    {
+                        "frame": {"duration": 0, "redraw": False},
+                        "mode": "immediate",
+                        "transition": {"duration": 0},
+                    },
+                ],
+                "label": f"{k_val:.2f}",
+                "method": "animate",
+            }
+        )
+    
+    fig_final.frames = frames
+    
+    fig_final.update_layout(
+        updatemenus=[
+            {
+                "buttons": [
+                    {
+                        "args": [
+                            None,
+                            {
+                                "frame": {"duration": 60, "redraw": False},
+                                "fromcurrent": True,
+                                "transition": {"duration": 0},
+                            },
+                        ],
+                        "label": " Play",
+                        "method": "animate",
+                    },
+                    {
+                        "args": [
+                            [None],
+                            {
+                                "frame": {"duration": 0, "redraw": False},
+                                "mode": "immediate",
+                                "transition": {"duration": 0},
+                            },
+                        ],
+                        "label": " Pause",
+                        "method": "animate",
+                    },
+                ],
+                "direction": "left",
+                "pad": {"r": 10, "t": 87},
+                "showactive": False,
+                "type": "buttons",
+                "x": 0.1,
+                "xanchor": "right",
+                "y": 0,
+                "yanchor": "top",
+            }
+        ],
+        sliders=[
+            {
+                "active": 0,
+                "yanchor": "top",
+                "xanchor": "left",
+                "currentvalue": {
+                    "font": {"size": 16, "color": "white"},
+                    "prefix": "Ganho K = ",
+                    "visible": True,
+                    "xanchor": "right",
+                },
+                "transition": {"duration": 0},
+                "pad": {"b": 10, "t": 50},
+                "len": 0.9,
+                "x": 0.1,
+                "y": 0,
+                "steps": slider_steps,
+            }
+        ],
+        height=700,
+    )
+    
+    st.plotly_chart(fig_final, width="stretch", config={"scrollZoom": True})
+
+
 def main():
     st.markdown(
         """
@@ -541,38 +814,7 @@ def main():
                         sum_p = " + ".join(f"{format_frac(a)}°" for a in zd["angles_p"]) or "0°"
                         st.latex(f"\\theta_{{a, {format_complex_frac(zd['zero'])}}} = 180^\\circ - ({sum_z}) + ({sum_p}) = {format_frac(zd['arrival_angle'])}^\\circ")
                 st.markdown("**Esboço Final do LGR:**")
-                K_vec, all_roots = simulate_root_locus(D_coeffs, N_coeffs, nP, nZ)
-                fig_simp = create_base_plot(poles, zeros, "Lugar Geométrico das Raízes (Esboço Final)", xmin, xmax, ymin, ymax)
-                for j in range(0, len(real_roots), 2):
-                    start = real_roots[j]
-                    if j + 1 < len(real_roots):
-                        fig_simp.add_trace(go.Scatter(x=[start, real_roots[j+1]], y=[0, 0], mode="lines", line=dict(color="#00b4d8", width=5), name="LGR Real", hoverinfo="skip"))
-                    else:
-                        end_plot = xmin - (xmax - xmin) * 0.1
-                        fig_simp.add_trace(go.Scatter(x=[start, end_plot], y=[0, 0], mode="lines", line=dict(color="#00b4d8", width=5), name="LGR Real", hoverinfo="skip"))
-                        fig_simp.add_annotation(x=end_plot, y=0, ax=start, ay=0, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=1.2, arrowwidth=3, arrowcolor="#00b4d8")
-                if nP != nZ:
-                    for q, a in enumerate(angles_A):
-                        rad = np.radians(a)
-                        t_vals = []
-                        if np.cos(rad) > 1e-5:
-                            t_vals.append((xmax - np.real(sigma_A)) / np.cos(rad))
-                        elif np.cos(rad) < -1e-5:
-                            t_vals.append((xmin - np.real(sigma_A)) / np.cos(rad))
-                        if np.sin(rad) > 1e-5:
-                            t_vals.append((ymax - 0) / np.sin(rad))
-                        elif np.sin(rad) < -1e-5:
-                            t_vals.append((ymin - 0) / np.sin(rad))
-                        t_vals = [t for t in t_vals if t > 0]
-                        t_draw = min(t_vals) if t_vals else max(2.0, max(xmax-xmin, ymax-ymin)*0.8)
-                        head_x = np.real(sigma_A) + t_draw * np.cos(rad)
-                        head_y = t_draw * np.sin(rad)
-                        fig_simp.add_trace(go.Scatter(x=[np.real(sigma_A), head_x], y=[0, head_y], mode="lines", line=dict(color="orange", width=2, dash="dash"), showlegend=False))
-                for branch_idx in range(all_roots.shape[1]):
-                    b_real = np.real(all_roots[:, branch_idx])
-                    b_imag = np.imag(all_roots[:, branch_idx])
-                    fig_simp.add_trace(go.Scatter(x=b_real, y=b_imag, mode="lines", line=dict(width=3, color="#00b4d8"), showlegend=False))
-                st.plotly_chart(fig_simp, width="stretch", config={"scrollZoom": True})
+                render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax, asintotas_data)
                 st.markdown("---")
                 
             if show_item_b:
@@ -2742,276 +2984,7 @@ def main():
             # Gráfico Final
             st.markdown("## Gráfico Final do LGR")
         
-            extra_K = []
-            if valid_breakaway:
-                extra_K.extend([float(k) for _, k in valid_breakaway if k > 0])
-            crossings_data = routh_result.get("crossings_data", [])
-            if crossings_data:
-                extra_K.extend([float(data["k_crit"]) for data in crossings_data if data["k_crit"] > 0])
-
-            K_vec, all_roots = simulate_root_locus(D_coeffs, N_coeffs, nP, nZ, extra_K=extra_K)
-
-            fig_final = create_base_plot(
-                poles,
-                zeros,
-                "Lugar Geométrico das Raízes (LGR) Completo",
-                xmin,
-                xmax,
-                ymin,
-                ymax,
-            )
-
-            palette = plotly.colors.qualitative.Plotly
-
-            margin_x = (xmax - xmin) * 0.05
-            margin_y = (ymax - ymin) * 0.05
-            box_xmin, box_xmax = xmin + margin_x, xmax - margin_x
-            box_ymin, box_ymax = ymin + margin_y, ymax - margin_y
-
-            branches_x = []
-            branches_y = []
-            branch_trace_indices = []
-
-            for i in range(all_roots.shape[1]):
-                branch = all_roots[:, i]
-                vx, vy = [], []
-                hit_infinity_idx = None
-
-                for pt in branch:
-                    if np.isnan(pt):
-                        continue
-                    x_p, y_p = np.real(pt), np.imag(pt)
-                    vx.append(x_p)
-                    vy.append(y_p)
-
-                    if hit_infinity_idx is None and (
-                        x_p < box_xmin or x_p > box_xmax or y_p < box_ymin or y_p > box_ymax
-                    ):
-                        hit_infinity_idx = len(vx) - 1
-
-                branches_x.append(vx)
-                branches_y.append(vy)
-
-                c = palette[i % len(palette)]
-                if len(vx) > 0:
-                    # Inicializa o ramo com apenas o primeiro ponto (K=0) para a animação pintá-lo aos poucos
-                    fig_final.add_trace(
-                        go.Scatter(
-                            x=[vx[0]],
-                            y=[vy[0]],
-                            mode="lines",
-                            line=dict(color=c, width=3),
-                            name=f"Ramo {i+1}",
-                        )
-                    )
-                    branch_trace_indices.append(len(fig_final.data) - 1)
-
-                # Seta no meio do caminho (direção a partir do polo)
-                if len(vx) > 10:
-                    mid = (
-                        len(vx) // 4
-                    )  # Pega um ponto a 25% do caminho para mostrar logo de cara
-                    fig_final.add_annotation(
-                        x=vx[mid],
-                        y=vy[mid],
-                        ax=vx[mid - 1],
-                        ay=vy[mid - 1],
-                        xref="x",
-                        yref="y",
-                        axref="x",
-                        ayref="y",
-                        showarrow=True,
-                        arrowhead=2,
-                        arrowsize=1.5,
-                        arrowwidth=2,
-                        arrowcolor=c,
-                    )
-
-                # Seta marcando a saída do viewport (indo pro infinito)
-                if hit_infinity_idx is not None and hit_infinity_idx >= 1:
-                    fig_final.add_annotation(
-                        x=vx[hit_infinity_idx],
-                        y=vy[hit_infinity_idx],
-                        ax=vx[hit_infinity_idx - 1],
-                        ay=vy[hit_infinity_idx - 1],
-                        xref="x",
-                        yref="y",
-                        axref="x",
-                        ayref="y",
-                        showarrow=True,
-                        arrowhead=2,
-                        arrowsize=1.5,
-                        arrowwidth=2,
-                        arrowcolor=c,
-                    )
-
-            if nP != nZ:
-                fig_final.add_trace(
-                    go.Scatter(
-                        x=[np.real(sigma_A)],
-                        y=[0],
-                        mode="markers",
-                        marker=dict(symbol="square", size=8, color="orange"),
-                        name="Centroide",
-                    )
-                )
-                for angle in angles_A:
-                    rad = np.radians(angle)
-                    dx = length_max * np.cos(rad) * 0.5
-                    dy = length_max * np.sin(rad) * 0.5
-                    fig_final.add_trace(
-                        go.Scatter(
-                            x=[np.real(sigma_A), np.real(sigma_A) + dx],
-                            y=[0, dy],
-                            mode="lines",
-                            line=dict(color="gray", width=1, dash="dash"),
-                            showlegend=False,
-                        )
-                    )
-
-            # --- ANIMAÇÃO DAS RAÍZES (K ITERATIVO) ---
-            init_x, init_y = [], []
-            for i in range(all_roots.shape[1]):
-                if branches_x[i]:
-                    init_x.append(branches_x[i][0])
-                    init_y.append(branches_y[i][0])
-
-            fig_final.add_trace(
-                go.Scatter(
-                    x=init_x,
-                    y=init_y,
-                    mode="markers",
-                    marker=dict(
-                        size=12,
-                        color="white",
-                        symbol="diamond",
-                        line=dict(width=2, color="#00b4d8"),
-                    ),
-                    name="Raízes Dinâmicas",
-                    hovertemplate="Raiz: %{x:.3f} + %{y:.3f}j<extra></extra>",
-                )
-            )
-
-            dynamic_trace_idx = len(fig_final.data) - 1
-
-            step_frames = max(1, len(K_vec) // 100)
-            frames = []
-            slider_steps = []
-
-            for i in range(0, len(K_vec), step_frames):
-                k_val = K_vec[i]
-                frame_name = f"frame_{i}"
-
-                frame_data = []
-
-                # Atualiza as linhas dos ramos para crescerem até o ponto atual
-                for b_idx, trace_idx in enumerate(branch_trace_indices):
-                    limit = min(i + 1, len(branches_x[b_idx]))
-                    if limit > 0:
-                        frame_data.append(
-                            go.Scatter(
-                                x=branches_x[b_idx][:limit], y=branches_y[b_idx][:limit]
-                            )
-                        )
-                    else:
-                        frame_data.append(go.Scatter(x=[], y=[]))
-
-                # Atualiza os diamantes (trajetória verdadeira, sem limite geométrico)
-                frame_dyn_x, frame_dyn_y = [], []
-                for b_idx in range(all_roots.shape[1]):
-                    limit = min(i, len(branches_x[b_idx]) - 1)
-                    if limit >= 0:
-                        frame_dyn_x.append(branches_x[b_idx][limit])
-                        frame_dyn_y.append(branches_y[b_idx][limit])
-
-                frame_data.append(go.Scatter(x=frame_dyn_x, y=frame_dyn_y))
-
-                # A ordem dos traços modificados deve corresponder exatamente a estes índices
-                frame_traces = branch_trace_indices + [dynamic_trace_idx]
-
-                frames.append(
-                    go.Frame(data=frame_data, name=frame_name, traces=frame_traces)
-                )
-
-                slider_steps.append(
-                    {
-                        "args": [
-                            [frame_name],
-                            {
-                                "frame": {"duration": 0, "redraw": False},
-                                "mode": "immediate",
-                                "transition": {"duration": 0},
-                            },
-                        ],
-                        "label": f"{k_val:.2f}",
-                        "method": "animate",
-                    }
-                )
-
-            fig_final.frames = frames
-
-            fig_final.update_layout(
-                updatemenus=[
-                    {
-                        "buttons": [
-                            {
-                                "args": [
-                                    None,
-                                    {
-                                        "frame": {"duration": 60, "redraw": False},
-                                        "fromcurrent": True,
-                                        "transition": {"duration": 0},
-                                    },
-                                ],
-                                "label": " Play",
-                                "method": "animate",
-                            },
-                            {
-                                "args": [
-                                    [None],
-                                    {
-                                        "frame": {"duration": 0, "redraw": False},
-                                        "mode": "immediate",
-                                        "transition": {"duration": 0},
-                                    },
-                                ],
-                                "label": " Pause",
-                                "method": "animate",
-                            },
-                        ],
-                        "direction": "left",
-                        "pad": {"r": 10, "t": 87},
-                        "showactive": False,
-                        "type": "buttons",
-                        "x": 0.1,
-                        "xanchor": "right",
-                        "y": 0,
-                        "yanchor": "top",
-                    }
-                ],
-                sliders=[
-                    {
-                        "active": 0,
-                        "yanchor": "top",
-                        "xanchor": "left",
-                        "currentvalue": {
-                            "font": {"size": 16, "color": "white"},
-                            "prefix": "Ganho K = ",
-                            "visible": True,
-                            "xanchor": "right",
-                        },
-                        "transition": {"duration": 0},
-                        "pad": {"b": 10, "t": 50},
-                        "len": 0.9,
-                        "x": 0.1,
-                        "y": 0,
-                        "steps": slider_steps,
-                    }
-                ],
-                height=700,
-            )
-
-            st.plotly_chart(fig_final, width="stretch", config={"scrollZoom": True})
+            render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax, asintotas_data)
 
         st.markdown(
             """
