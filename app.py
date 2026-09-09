@@ -523,7 +523,15 @@ def main():
                 st.markdown("**10. Ângulos de Partida e Chegada**")
                 dep_arr = calculate_departure_arrival_angles(poles, zeros)
                 if not dep_arr.get("has_complex"):
-                    st.markdown("• Não há pólos ou zeros complexos.")
+                    st.markdown("• Não há pólos ou zeros complexos conjugados.")
+                    st.markdown("**Motivo:**")
+                    st.markdown("Apenas singularidades com parte imaginária não nula ($\\text{Im} \\neq 0$) demandam cálculo tangencial. Verificando as raízes de malha aberta:")
+                    if nP > 0:
+                        p_str = ", ".join([f"{format_complex_frac(p)}" for p in poles])
+                        st.latex(rf"p_i \in \{{{p_str}\}} \implies \text{{Im}}(p_i) = 0 \quad \forall p_i")
+                    if nZ > 0:
+                        z_str = ", ".join([f"{format_complex_frac(z)}" for z in zeros])
+                        st.latex(rf"z_j \in \{{{z_str}\}} \implies \text{{Im}}(z_j) = 0 \quad \forall z_j")
                 else:
                     for pd in dep_arr.get("pole_details", []):
                         sum_p = " + ".join(f"{format_frac(a)}°" for a in pd["angles_p"]) or "0°"
