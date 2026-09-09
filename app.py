@@ -414,13 +414,26 @@ def main():
                     for q, a in enumerate(angles_A):
                         st.latex(f"\\theta_{{{q}}} = \\frac{{180^\\circ(2({q})+1)}}{{|n_P - n_Z|}} = {format_frac(a)}^\\circ")
                 st.markdown("**8. Pontos de Saída/Entrada**")
-                st.latex(r"1) \quad K = -P(s)^{-1} \qquad 2) \quad \frac{dK}{ds} = 0")
-                
+                import sympy as sp
+                D_sym = breakaway_details["D_sym"]
+                N_sym = breakaway_details["N_sym"]
+                D_der_sym = breakaway_details["D_der_sym"]
+                N_der_sym = breakaway_details["N_der_sym"]
                 U_simp = breakaway_details["U_simp"]
                 candidates = breakaway_details["candidates"]
                 is_constant_deriv = breakaway_details["is_constant_deriv"]
                 
-                st.markdown("Derivando e igualando a zero:")
+                d_latex = sp.latex(D_sym)
+                n_latex = sp.latex(N_sym)
+                if n_latex == "1":
+                    st.latex(rf"1) \quad K(s) = -\left({d_latex}\right)")
+                    st.latex(r"2) \quad \frac{dK}{ds} = -D'(s) = 0 \implies D'(s) = 0")
+                else:
+                    st.latex(rf"1) \quad K(s) = -\frac{{{d_latex}}}{{{n_latex}}}")
+                    st.latex(r"2) \quad \frac{dK}{ds} = -\frac{D'(s)N(s) - D(s)N'(s)}{[N(s)]^2} = 0 \implies D'(s)N(s) - D(s)N'(s) = 0")
+                    st.latex(rf"({sp.latex(D_der_sym)})({n_latex}) - ({d_latex})({sp.latex(N_der_sym)}) = 0")
+                
+                st.markdown("Polinômio resultante e raízes:")
                 if is_constant_deriv:
                     st.latex(rf"{sp.latex(U_simp)} = 0 \implies \text{{Sem raízes (Não há candidatos)}}")
                 else:
