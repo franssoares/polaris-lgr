@@ -30,6 +30,10 @@ st.set_page_config(page_title="LGR - 12 Passos", layout="wide")
 from fractions import Fraction
 
 def format_frac(val, tol=1e-5):
+    if np.isinf(val):
+        return "\\infty" if val > 0 else "-\\infty"
+    if np.isnan(val):
+        return "NaN"
     if abs(val - round(val)) < tol:
         return f"{int(round(val))}"
     return f"{float(val):.3g}"
