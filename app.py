@@ -809,13 +809,15 @@ def main():
                         st.latex(rf"z_j \in \{{{z_str}\}} \implies \text{{Im}}(z_j) = 0 \quad \forall z_j")
                 else:
                     for pd in dep_arr.get("pole_details", []):
-                        sum_p = " + ".join(f"{format_frac(a)}°" for a in pd["angles_p"]) or "0°"
-                        sum_z = " + ".join(f"{format_frac(a)}°" for a in pd["angles_z"]) or "0°"
-                        st.latex(f"\\theta_{{d, {format_complex_frac(pd['pole'])}}} = 180^\\circ - ({sum_p}) + ({sum_z}) = {format_frac(pd['departure_angle'])}^\\circ")
+                        sum_p = " + ".join(f"{format_frac(v['angle_deg'])}°" for v in pd["vecs_p"]) or "0°"
+                        sum_z = " + ".join(f"{format_frac(v['angle_deg'])}°" for v in pd["vecs_z"]) or "0°"
+                        dep_angle = pd["branches"][0]["norm"] if pd["branches"] else 0
+                        st.latex(f"\\theta_{{d, {format_complex_frac(pd['pole'])}}} = 180^\\circ - ({sum_p}) + ({sum_z}) = {format_frac(dep_angle)}^\\circ")
                     for zd in dep_arr.get("zero_details", []):
-                        sum_z = " + ".join(f"{format_frac(a)}°" for a in zd["angles_z"]) or "0°"
-                        sum_p = " + ".join(f"{format_frac(a)}°" for a in zd["angles_p"]) or "0°"
-                        st.latex(f"\\theta_{{a, {format_complex_frac(zd['zero'])}}} = 180^\\circ - ({sum_z}) + ({sum_p}) = {format_frac(zd['arrival_angle'])}^\\circ")
+                        sum_z = " + ".join(f"{format_frac(v['angle_deg'])}°" for v in zd["vecs_z"]) or "0°"
+                        sum_p = " + ".join(f"{format_frac(v['angle_deg'])}°" for v in zd["vecs_p"]) or "0°"
+                        arr_angle = zd["branches"][0]["norm"] if zd["branches"] else 0
+                        st.latex(f"\\theta_{{a, {format_complex_frac(zd['zero'])}}} = 180^\\circ - ({sum_z}) + ({sum_p}) = {format_frac(arr_angle)}^\\circ")
                 st.markdown("**Esboço Final do LGR:**")
                 render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax)
                 st.markdown("---")
@@ -2377,7 +2379,7 @@ def main():
                             st.markdown(r"**a) Vetores partindo dos demais polos até $p$ ($\vec{v}_i = p - p_i$):**")
                             if vecs_p:
                                 p_table = [
-                                    "| Polo Origem ($p_i$) | Vetor $\\vec{v} = p - p_i$ | Distância $|\\vec{v}|$ | Ângulo $\\theta_{p_i} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
+                                    "| Polo Origem ($p_i$) | Vetor $\\vec{v} = p - p_i$ | Distância $\\lVert \\vec{v} \\rVert$ | Ângulo $\\theta_{p_i} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
                                     "| :--- | :--- | :--- | :--- |",
                                 ]
                                 for vp in vecs_p:
@@ -2399,7 +2401,7 @@ def main():
                             st.markdown(r"**b) Vetores partindo dos zeros até $p$ ($\vec{w}_j = p - z_j$):**")
                             if vecs_z:
                                 z_table = [
-                                    "| Zero Origem ($z_j$) | Vetor $\\vec{w} = p - z_j$ | Distância $|\\vec{w}|$ | Ângulo $\\phi_{z_j} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
+                                    "| Zero Origem ($z_j$) | Vetor $\\vec{w} = p - z_j$ | Distância $\\lVert \\vec{w} \\rVert$ | Ângulo $\\phi_{z_j} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
                                     "| :--- | :--- | :--- | :--- |",
                                 ]
                                 for vz in vecs_z:
@@ -2493,7 +2495,7 @@ def main():
                             st.markdown(r"**a) Vetores partindo dos polos até $z$ ($\vec{v}_i = z - p_i$):**")
                             if vecs_p:
                                 p_table = [
-                                    "| Polo Origem ($p_i$) | Vetor $\\vec{v} = z - p_i$ | Distância $|\\vec{v}|$ | Ângulo $\\theta_{p_i} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
+                                    "| Polo Origem ($p_i$) | Vetor $\\vec{v} = z - p_i$ | Distância $\\lVert \\vec{v} \\rVert$ | Ângulo $\\theta_{p_i} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
                                     "| :--- | :--- | :--- | :--- |",
                                 ]
                                 for vp in vecs_p:
@@ -2515,7 +2517,7 @@ def main():
                             st.markdown(r"**b) Vetores partindo dos demais zeros até $z$ ($\vec{w}_j = z - z_j$):**")
                             if vecs_z:
                                 z_table = [
-                                    "| Zero Origem ($z_j$) | Vetor $\\vec{w} = z - z_j$ | Distância $|\\vec{w}|$ | Ângulo $\\phi_{z_j} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
+                                    "| Zero Origem ($z_j$) | Vetor $\\vec{w} = z - z_j$ | Distância $\\lVert \\vec{w} \\rVert$ | Ângulo $\\phi_{z_j} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
                                     "| :--- | :--- | :--- | :--- |",
                                 ]
                                 for vz in vecs_z:
@@ -2762,7 +2764,7 @@ def main():
                 st.markdown(r"### 1. Vetores partindo dos Polos até $s_0$ ($\vec{v}_{p_i} = s_0 - p_i$):")
                 if vecs_p:
                     p_table = [
-                        "| Polo Origem ($p_i$) | Vetor $\\vec{v}_{p_i} = s_0 - p_i$ | Componentes $(\\Delta \\sigma, \\Delta \\omega)$ | Distância $|\\vec{v}_{p_i}|$ | Ângulo $\\theta_{p_i} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
+                        "| Polo Origem ($p_i$) | Vetor $\\vec{v}_{p_i} = s_0 - p_i$ | Componentes $(\\Delta \\sigma, \\Delta \\omega)$ | Distância $\\lVert \\vec{v}_{p_i} \\rVert$ | Ângulo $\\theta_{p_i} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
                         "| :--- | :--- | :--- | :--- | :--- |",
                     ]
                     for vp in vecs_p:
@@ -2786,7 +2788,7 @@ def main():
                 st.markdown(r"### 2. Vetores partindo dos Zeros até $s_0$ ($\vec{w}_{z_j} = s_0 - z_j$):")
                 if vecs_z:
                     z_table = [
-                        "| Zero Origem ($z_j$) | Vetor $\\vec{w}_{z_j} = s_0 - z_j$ | Componentes $(\\Delta \\sigma, \\?\\Delta \\omega)$ | Distância $|\\vec{w}_{z_j}|$ | Ângulo $\\phi_{z_j} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
+                        "| Zero Origem ($z_j$) | Vetor $\\vec{w}_{z_j} = s_0 - z_j$ | Componentes $(\\Delta \\sigma, \\Delta \\omega)$ | Distância $\\lVert \\vec{w}_{z_j} \\rVert$ | Ângulo $\\phi_{z_j} = \\operatorname{atan2}(\\Delta \\omega, \\Delta \\sigma)$ |",
                         "| :--- | :--- | :--- | :--- | :--- |",
                     ]
                     for vz in vecs_z:
