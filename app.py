@@ -756,15 +756,18 @@ def main():
                 real_roots = [np.real(r) for r in np.concatenate((poles, zeros)) if abs(np.imag(r)) < 1e-5]
                 real_roots = sorted(real_roots, reverse=True)
                 segments = []
+                segment_coords = []
                 fig_p34 = create_base_plot(poles, zeros, "Passos 3 e 4: Pólos, Zeros e Eixo Real", xmin, xmax, ymin, ymax)
                 for j in range(0, len(real_roots), 2):
                     start = real_roots[j]
                     if j + 1 < len(real_roots):
                         segments.append(f"[{format_frac(real_roots[j+1])}, {format_frac(start)}]")
+                        segment_coords.append((start, real_roots[j+1]))
                         fig_p34.add_trace(go.Scatter(x=[start, real_roots[j+1]], y=[0, 0], mode="lines", line=dict(color="#00b4d8", width=5), name="LGR Real"))
                     else:
                         segments.append(f"(-∞, {format_frac(start)}]")
                         end_plot = xmin - (xmax - xmin) * 0.1
+                        segment_coords.append((start, end_plot))
                         fig_p34.add_trace(go.Scatter(x=[start, end_plot], y=[0, 0], mode="lines", line=dict(color="#00b4d8", width=5), name="LGR Real"))
                         fig_p34.add_annotation(x=end_plot, y=0, ax=start, ay=0, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=1.2, arrowwidth=3, arrowcolor="#00b4d8")
                 st.markdown("• Segmentos válidos: " + (", ".join(segments) if segments else "Nenhum"))
@@ -834,6 +837,8 @@ def main():
                                 st.markdown(f"• $s_{{{idx}}} = {s_str}$ ($K(s_{{{idx}}}) = {K_str}$) $\\to$ **Descartado** ({reason})")
 
                 # Passo 9
+                fig8 = generate_fig8_breakaway(poles, zeros, segment_coords, candidates, xmin, xmax, ymin, ymax)
+                st.plotly_chart(fig8, width="stretch", config={"scrollZoom": True})
                 st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**9. Cruzamento com o eixo jω (Routh-Hurwitz)**")
                 st.markdown(f"Condição de estabilidade gerada para: $D(s) + K \\cdot N(s) = 0$")
