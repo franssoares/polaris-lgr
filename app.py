@@ -446,11 +446,13 @@ def render_phasor_angles(details, is_pole, poles, zeros, format_complex_frac, fo
         sum_same = item["sum_p"] if is_pole else item["sum_z"]
         sum_diff = item["sum_z"] if is_pole else item["sum_p"]
         
-        # Find index
+        # Find index based on sorted arrays (matching Step 2 and 3)
+        sorted_poles = sorted(poles, key=lambda x: (np.real(x), np.imag(x)))
+        sorted_zeros = sorted(zeros, key=lambda x: (np.real(x), np.imag(x)))
         if is_pole:
-            k_idx = next((i + 1 for i, p in enumerate(poles) if np.isclose(cp, p)), "k")
+            k_idx = next((i + 1 for i, p in enumerate(sorted_poles) if np.isclose(cp, p)), "k")
         else:
-            k_idx = next((i + 1 for i, z in enumerate(zeros) if np.isclose(cp, z)), "k")
+            k_idx = next((i + 1 for i, z in enumerate(sorted_zeros) if np.isclose(cp, z)), "k")
             
         cp_str = format_complex_frac(cp)
         st.markdown(f"**{'Polo' if is_pole else 'Zero'} ${sing_char}_{{{k_idx}}} = {cp_str}$:**")
@@ -460,9 +462,9 @@ def render_phasor_angles(details, is_pole, poles, zeros, format_complex_frac, fo
             for v in vecs_same:
                 orig = v["pole"] if is_pole else v["zero"]
                 if is_pole:
-                    j_idx = next((i + 1 for i, p in enumerate(poles) if np.isclose(orig, p)), "j")
+                    j_idx = next((i + 1 for i, p in enumerate(sorted_poles) if np.isclose(orig, p)), "j")
                 else:
-                    j_idx = next((i + 1 for i, z in enumerate(zeros) if np.isclose(orig, z)), "j")
+                    j_idx = next((i + 1 for i, z in enumerate(sorted_zeros) if np.isclose(orig, z)), "j")
                     
                 c_calc = v["vector"]
                 ang = v["angle_deg"]
@@ -477,9 +479,9 @@ def render_phasor_angles(details, is_pole, poles, zeros, format_complex_frac, fo
             for v in vecs_diff:
                 orig = v["zero"] if is_pole else v["pole"]
                 if is_pole:
-                    j_idx = next((i + 1 for i, z in enumerate(zeros) if np.isclose(orig, z)), "j")
+                    j_idx = next((i + 1 for i, z in enumerate(sorted_zeros) if np.isclose(orig, z)), "j")
                 else:
-                    j_idx = next((i + 1 for i, p in enumerate(poles) if np.isclose(orig, p)), "j")
+                    j_idx = next((i + 1 for i, p in enumerate(sorted_poles) if np.isclose(orig, p)), "j")
                 
                 c_calc = v["vector"]
                 ang = v["angle_deg"]
