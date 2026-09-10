@@ -418,6 +418,73 @@ def render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs,
     st.plotly_chart(fig_final, width="stretch", config={"scrollZoom": True})
 
 
+
+def render_phasor_angles(details, is_pole, format_complex_frac, format_frac, st):
+    if not details:
+        return
+        
+    kind = "partida" if is_pole else "chegada"
+    sing_type = "polos" if is_pole else "zeros"
+    sing_char = "p" if is_pole else "z"
+    other_char = "z" if is_pole else "p"
+    theta_char = r"\theta_d" if is_pole else r"\theta_a"
+    
+    st.markdown(f"**Angulos de {kind} ({sing_type} complexos)**")
+    st.markdown("**Formula:**")
+    
+    if is_pole:
+        st.latex(rf"{theta_char} = 180^\circ - \sum_{{j \neq k}} \angle ({sing_char}_k - {sing_char}_j) + \sum_j \angle ({sing_char}_k - {other_char}_j)")
+    else:
+        st.latex(rf"{theta_char} = 180^\circ - \sum_{{j \neq k}} \angle ({sing_char}_k - {sing_char}_j) + \sum_j \angle ({sing_char}_k - {other_char}_j)")
+        
+    for item in details:
+        cp = item["pole"] if is_pole else item["zero"]
+        m = item["multiplicity"]
+        vecs_same = item["vecs_p"] if is_pole else item["vecs_z"]
+        vecs_diff = item["vecs_z"] if is_pole else item["vecs_p"]
+        sum_same = item["sum_p"] if is_pole else item["sum_z"]
+        sum_diff = item["sum_z"] if is_pole else item["sum_p"]
+        
+        st.markdown(f"**{'Polo' if is_pole else 'Zero'} ${sing_char}_k = {format_complex_frac(cp)}$:**")
+        
+        st.markdown(f"**Angulos dos outros {sing_type}:**")
+        if vecs_same:
+            for v in vecs_same:
+                orig = v["pole"] if is_pole else v["zero"]
+                c_calc = v["vector"]
+                ang = v["angle_deg"]
+                st.latex(rf"\angle ({sing_char}_k - {sing_char}_j) = \angle ({format_complex_frac(cp)} - ({format_complex_frac(orig)})) = \angle ({format_complex_frac(c_calc)}) = {format_frac(ang)}^\\circ")
+        else:
+            st.markdown(f"Nao ha outros {sing_type}.")
+            
+        st.markdown(f"**Angulos dos {'zeros' if is_pole else 'polos'}:**")
+        if vecs_diff:
+            for v in vecs_diff:
+                orig = v["zero"] if is_pole else v["pole"]
+                c_calc = v["vector"]
+                ang = v["angle_deg"]
+                st.latex(rf"\angle ({sing_char}_k - {other_char}_j) = \angle ({format_complex_frac(cp)} - ({format_complex_frac(orig)})) = \angle ({format_complex_frac(c_calc)}) = {format_frac(ang)}^\\circ")
+        else:
+            st.markdown(f"Nao ha {'zeros' if is_pole else 'polos'}.")
+            
+        st.markdown("**Somatorios:**")
+        st.latex(rf"\sum \angle ({sing_char}_k - {sing_char}_j) = {format_frac(sum_same)}^\\circ")
+        st.latex(rf"\sum \angle ({sing_char}_k - {other_char}_j) = {format_frac(sum_diff)}^\\circ")
+        
+        st.markdown("**Resultado:**")
+        for b in item["branches"]:
+            q = b["q"]
+            norm = b["norm"]
+            a360 = b["a360"]
+            if m == 1:
+                st.latex(rf"{theta_char} = 180^\circ - ({format_frac(sum_same)}^\circ) + ({format_frac(sum_diff)}^\circ) = {format_frac(norm)}^\\circ")
+            else:
+                st.latex(rf"q = {q} \implies {theta_char} = \frac{{180^\circ({2*q+1}) - ({format_frac(sum_same)}^\circ) + ({format_frac(sum_diff)}^\circ)}}{{{m}}} = {format_frac(norm)}^\\circ")
+            
+            # Conjugado
+            st.markdown(f"**Conjugado:** {format_frac(-norm if norm != 0 else 0)}^\\circ")
+
+
 def main():
     st.markdown(
         """
@@ -808,16 +875,8 @@ def main():
                         z_str = ", ".join([f"{format_complex_frac(z)}" for z in zeros])
                         st.latex(rf"z_j \in \{{{z_str}\}} \implies \text{{Im}}(z_j) = 0 \quad \forall z_j")
                 else:
-                    for pd in dep_arr.get("pole_details", []):
-                        sum_p = " + ".join(f"{format_frac(v['angle_deg'])}°" for v in pd["vecs_p"]) or "0°"
-                        sum_z = " + ".join(f"{format_frac(v['angle_deg'])}°" for v in pd["vecs_z"]) or "0°"
-                        dep_angle = pd["branches"][0]["norm"] if pd["branches"] else 0
-                        st.latex(f"\\theta_{{d, {format_complex_frac(pd['pole'])}}} = 180^\\circ - ({sum_p}) + ({sum_z}) = {format_frac(dep_angle)}^\\circ")
-                    for zd in dep_arr.get("zero_details", []):
-                        sum_z = " + ".join(f"{format_frac(v['angle_deg'])}°" for v in zd["vecs_z"]) or "0°"
-                        sum_p = " + ".join(f"{format_frac(v['angle_deg'])}°" for v in zd["vecs_p"]) or "0°"
-                        arr_angle = zd["branches"][0]["norm"] if zd["branches"] else 0
-                        st.latex(f"\\theta_{{a, {format_complex_frac(zd['zero'])}}} = 180^\\circ - ({sum_z}) + ({sum_p}) = {format_frac(arr_angle)}^\\circ")
+                    render_phasor_angles(dep_arr.get("pole_details", []), True, format_complex_frac, format_frac, st)
+                    render_phasor_angles(dep_arr.get("zero_details", []), False, format_complex_frac, format_frac, st)
                 st.markdown("**Esboço Final do LGR:**")
                 render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax)
                 st.markdown("---")
@@ -2344,6 +2403,166 @@ def main():
                         r"Assim, o cálculo de ângulos tangenciais de partida e chegada só se define para singularidades com parte imaginária não nula."
                     )
                 else:
+                    if pole_details:
+                        render_phasor_angles(pole_details, True, format_complex_frac, format_frac, st)
+
+                    if zero_details:
+                        st.markdown("---")
+                        render_phasor_angles(zero_details, False, format_complex_frac, format_frac, st)
+
+                # 3. Visualização Gráfica no Plano s
+                st.markdown("---")
+                st.markdown(r"**3. Visualização Gráfica no Plano $s$:**")
+                fig9 = create_base_plot(
+                    poles,
+                    zeros,
+                    "Cruzamento com o Eixo Imaginário (jω)",
+                    xmin,
+                    xmax,
+                    ymin,
+                    ymax,
+                    draw_poles_zeros=False,
+                )
+
+                # Highlight imaginary axis
+                fig9.add_vline(
+                    x=0,
+                    line_dash="solid",
+                    line_color="rgba(0, 180, 216, 0.4)",
+                    line_width=2,
+                )
+
+                if crossings_data:
+                    for data in crossings_data:
+                        k_crit = data["k_crit"]
+                        omegas = data["omegas"]
+                        for w in omegas:
+                            # Upper crossing
+                            fig9.add_trace(
+                                go.Scatter(
+                                    x=[0],
+                                    y=[w],
+                                    mode="markers",
+                                    marker=dict(
+                                        symbol="star",
+                                        size=16,
+                                        color="#ff007f",
+                                        line=dict(width=2, color="white"),
+                                    ),
+                                    name=f"+{format_frac(w)}j (K={format_frac(k_crit)})",
+                                    hovertemplate=f"<b>Cruzamento jω</b><br>s = +{format_frac(w)}j<br>ω = {format_frac(w)} rad/s<br>K = {format_frac(k_crit)}<extra></extra>",
+                                )
+                            )
+                            fig9.add_annotation(
+                                x=0,
+                                y=w,
+                                text=f"<b>jω = +{format_frac(w)}</b><br>K = {format_frac(k_crit)}",
+                                showarrow=True,
+                                arrowhead=2,
+                                arrowsize=1,
+                                arrowwidth=2,
+                                arrowcolor="#ff007f",
+                                ax=50,
+                                ay=-30,
+                                font=dict(color="white", size=11),
+                                bgcolor="rgba(14, 17, 23, 0.85)",
+                                bordercolor="#ff007f",
+                                borderwidth=1,
+                                borderpad=3,
+                            )
+
+                            # Lower crossing
+                            fig9.add_trace(
+                                go.Scatter(
+                                    x=[0],
+                                    y=[-w],
+                                    mode="markers",
+                                    marker=dict(
+                                        symbol="star",
+                                        size=16,
+                                        color="#ff007f",
+                                        line=dict(width=2, color="white"),
+                                    ),
+                                    name=f"-{format_frac(w)}j (K={format_frac(k_crit)})",
+                                    hovertemplate=f"<b>Cruzamento jω</b><br>s = -{format_frac(w)}j<br>ω = {format_frac(w)} rad/s<br>K = {format_frac(k_crit)}<extra></extra>",
+                                )
+                            )
+                            fig9.add_annotation(
+                                x=0,
+                                y=-w,
+                                text=f"<b>jω = -{format_frac(w)}</b><br>K = {format_frac(k_crit)}",
+                                showarrow=True,
+                                arrowhead=2,
+                                arrowsize=1,
+                                arrowwidth=2,
+                                arrowcolor="#ff007f",
+                                ax=50,
+                                ay=30,
+                                font=dict(color="white", size=11),
+                                bgcolor="rgba(14, 17, 23, 0.85)",
+                                bordercolor="#ff007f",
+                                borderwidth=1,
+                                borderpad=3,
+                            )
+
+                            # Segment connecting the two conjugate crossings
+                            fig9.add_trace(
+                                go.Scatter(
+                                    x=[0, 0],
+                                    y=[-w, w],
+                                    mode="lines",
+                                    line=dict(color="#ff007f", width=2, dash="dash"),
+                                    name="Eixo de Oscilação",
+                                    showlegend=False,
+                                    hoverinfo="skip",
+                                )
+                            )
+                else:
+                    fig9.add_annotation(
+                        x=0,
+                        y=(ymin + ymax) * 0.25,
+                        text="<b>Sem cruzamento com jω para K > 0</b><br>Sistema permanece estável no SPE",
+                        showarrow=False,
+                        font=dict(color="#00ff88", size=12),
+                        bgcolor="rgba(14, 17, 23, 0.85)",
+                        bordercolor="#00ff88",
+                        borderwidth=1,
+                        borderpad=5,
+                    )
+
+                add_poles_zeros_traces(fig9, poles, zeros, show_labels=False)
+                fig9.update_layout(height=520)
+                st.plotly_chart(fig9, width="stretch", config={"scrollZoom": True})
+
+            # Passo 10
+            with st.expander("Passo 10: Ângulos de partida/chegada", expanded=True):
+                st.markdown(
+                    r"Os **ângulos de partida** ($\theta_p$) e **ângulos de chegada** ($\theta_z$) determinam as direções angulares tangenciais com que os ramos do LGR emergem dos polos complexos (quando o ganho $K \to 0^+$) ou incidem nos zeros complexos (quando $K \to \infty$)."
+                )
+                st.markdown(
+                    r"Essas direções decorrem diretamente da **condição de ângulo** fundamental do LGR direto ($K > 0$):"
+                )
+                st.latex(
+                    r"\angle G(s)H(s) = \sum_{j=1}^{nZ} \angle(s - z_j) - \sum_{i=1}^{nP} \angle(s - p_i) = \pm 180^\circ(2q+1)"
+                )
+
+                dep_arr_details = calculate_departure_arrival_angles(poles, zeros)
+                has_complex = dep_arr_details["has_complex"]
+                pole_details = dep_arr_details["pole_details"]
+                zero_details = dep_arr_details["zero_details"]
+
+                if not has_complex:
+                    st.markdown("---")
+                    st.info(
+                        "️ **Não aplicável:** O sistema não possui polos nem zeros complexos conjugados ($\text{Im} \neq 0$)."
+                    )
+                    st.markdown(
+                        r"**Fundamentação Teórica:** "
+                        r"Conforme estabelecido nos Passos 4 e 8, os polos e zeros puramente reais possuem ramos do LGR que iniciam e terminam "
+                        r"estritamente alinhados ao longo do próprio eixo real (em direções de $0^\circ$ ou $180^\circ$). "
+                        r"Assim, o cálculo de ângulos tangenciais de partida e chegada só se define para singularidades com parte imaginária não nula."
+                    )
+                else:
                     # 1. Polos Complexos (Ângulos de Partida)
                     if pole_details:
                         st.markdown("---")
@@ -2779,7 +2998,7 @@ def main():
                         )
                     st.markdown("\n".join(p_table))
                     sum_p_terms = " + ".join([f"({format_frac(vp['angle_deg'])}^\\circ)" for vp in vecs_p])
-                    st.latex(rf"\sum_{{i=1}}^{{nP}} \theta_{{p_i}} = {sum_p_terms} = {format_frac(sum_p)}^\circ")
+                    st.latex(rf"\sum_{{i=1}}^{{nP}} \theta_{{p_i}} = {sum_p_terms} = {format_frac(sum_p)}^\\circ")
                 else:
                     st.markdown(r"*(Não há polos no sistema)* $\implies \sum \theta_p = 0^\circ$.")
 
@@ -2803,7 +3022,7 @@ def main():
                         )
                     st.markdown("\n".join(z_table))
                     sum_z_terms = " + ".join([f"({format_frac(vz['angle_deg'])}^\\circ)" for vz in vecs_z])
-                    st.latex(rf"\sum_{{j=1}}^{{nZ}} \phi_{{z_j}} = {sum_z_terms} = {format_frac(sum_z)}^\circ")
+                    st.latex(rf"\sum_{{j=1}}^{{nZ}} \phi_{{z_j}} = {sum_z_terms} = {format_frac(sum_z)}^\\circ")
                 else:
                     st.markdown(r"*(Não há zeros no sistema)* $\implies \sum \phi_z = 0^\circ$.")
 
