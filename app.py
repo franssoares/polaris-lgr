@@ -731,22 +731,26 @@ def main():
             
             if show_item_a:
                 st.markdown("### ▼ ITEM (a): ESBOÇO DO LGR")
+                st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**1. Polinômio característico com K em evidência**")
                 char_poly_str = get_char_poly_latex(D_coeffs, N_coeffs)
                 num_str = format_poly_latex(N_coeffs)
                 den_str = format_poly_latex(D_coeffs)
                 st.latex(r"1 + G(s)H(s) = 1 + K \frac{" + num_str + r"}{" + den_str + r"} = 0 \Rightarrow " + char_poly_str + " = 0")
+                st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**2. Fatoração de P(s)**")
                 num_fact = format_factored_latex(zeros)
                 den_fact = format_factored_latex(poles)
                 K_scale = N_coeffs[0] / D_coeffs[0] if D_coeffs[0] != 0 else 1.0
                 K_str = f"{format_frac(K_scale)}" if K_scale != 1.0 else ""
                 st.latex(r"P(s) = " + K_str + r"\frac{" + num_fact + r"}{" + den_fact + r"}")
+                st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**3. Pólos e zeros de malha aberta**")
                 p_list = [f"p_{{{i+1}}} = {format_root(p)}" for i, p in enumerate(sorted(poles, key=lambda x: (np.real(x), np.imag(x))))]
                 z_list = [f"z_{{{i+1}}} = {format_root(z)}" for i, z in enumerate(sorted(zeros, key=lambda x: (np.real(x), np.imag(x))))]
                 st.markdown("• Polos: " + (", ".join([f"${p}$" for p in p_list]) if p_list else "Nenhum"))
                 st.markdown("• Zeros: " + (", ".join([f"${z}$" for z in z_list]) if z_list else "Nenhum"))
+                st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**4. Segmentos do eixo real**")
                 st.markdown("Aplica-se à esquerda de um número ímpar de pólos+zeros no eixo real.")
                 real_roots = [np.real(r) for r in np.concatenate((poles, zeros)) if abs(np.imag(r)) < 1e-5]
@@ -765,11 +769,14 @@ def main():
                         fig_p34.add_annotation(x=end_plot, y=0, ax=start, ay=0, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=1.2, arrowwidth=3, arrowcolor="#00b4d8")
                 st.markdown("• Segmentos válidos: " + (", ".join(segments) if segments else "Nenhum"))
                 st.plotly_chart(fig_p34, width="stretch", config={"scrollZoom": True})
+                st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**5. Número de lugares separados (Ramos)**")
                 ls = max(nP, nZ)
                 st.latex(f"LS = \\max(n_P, n_Z) = \\max({nP}, {nZ}) = {ls}")
+                st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**6. Simetria**")
                 st.markdown("O LGR é simétrico em relação ao eixo real.")
+                st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**7. Assíntotas**")
                 if nP == nZ:
                     st.markdown("• Não há assíntotas.")
@@ -781,6 +788,7 @@ def main():
                     angles_A = [(2 * q + 1) * 180 / abs(nP - nZ) for q in range(abs(nP - nZ))]
                     for q, a in enumerate(angles_A):
                         st.latex(f"\\theta_{{{q}}} = \\frac{{180^\circ(2({q})+1)}}{{|n_P - n_Z|}} = {format_frac(a)}^\circ")
+                st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**8. Pontos de Saída/Entrada**")
                 D_sym = breakaway_details["D_sym"]
                 N_sym = breakaway_details["N_sym"]
@@ -824,6 +832,7 @@ def main():
                                 st.markdown(f"• $s_{{{idx}}} = {s_str}$ ($K(s_{{{idx}}}) = {K_str}$) $\\to$ **Descartado** ({reason})")
 
                 # Passo 9
+                st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**9. Cruzamento com o eixo jω (Routh-Hurwitz)**")
                 st.markdown(f"Condição de estabilidade gerada para: $D(s) + K \\cdot N(s) = 0$")
                 routh_table = routh_result.get("table", [])
@@ -887,6 +896,7 @@ def main():
                         for w in omegas:
                             st.markdown(f"• Raízes do cruzamento: $s = \\pm {format_frac(w)}j$")
                 
+                st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**10. Ângulos de Partida e Chegada**")
                 dep_arr = calculate_departure_arrival_angles(poles, zeros)
                 if not dep_arr.get("has_complex"):
