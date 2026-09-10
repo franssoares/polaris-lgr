@@ -419,7 +419,8 @@ def render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs,
 
 
 
-def render_phasor_angles(details, is_pole, format_complex_frac, format_frac, st):
+def render_phasor_angles(details, is_pole, poles, zeros, format_complex_frac, format_frac, st):
+    import numpy as np
     if not details:
         return
         
@@ -433,9 +434,9 @@ def render_phasor_angles(details, is_pole, format_complex_frac, format_frac, st)
     st.markdown("**Formula:**")
     
     if is_pole:
-        st.latex(rf"{theta_char} = 180^\circ - \sum_{{j \neq k}} \angle ({sing_char}_k - {sing_char}_j) + \sum_j \angle ({sing_char}_k - {other_char}_j)")
+        st.latex(rf"{theta_char} = 180^\circ - \sum_{{j \neq k}} \angle (p_k - p_j) + \sum_j \angle (p_k - z_j)")
     else:
-        st.latex(rf"{theta_char} = 180^\circ - \sum_{{j \neq k}} \angle ({sing_char}_k - {sing_char}_j) + \sum_j \angle ({sing_char}_k - {other_char}_j)")
+        st.latex(rf"{theta_char} = 180^\circ - \sum_{{j \neq k}} \angle (z_k - z_j) + \sum_j \angle (z_k - p_j)")
         
     for item in details:
         cp = item["pole"] if is_pole else item["zero"]
@@ -445,15 +446,29 @@ def render_phasor_angles(details, is_pole, format_complex_frac, format_frac, st)
         sum_same = item["sum_p"] if is_pole else item["sum_z"]
         sum_diff = item["sum_z"] if is_pole else item["sum_p"]
         
-        st.markdown(f"**{'Polo' if is_pole else 'Zero'} ${sing_char}_k = {format_complex_frac(cp)}$:**")
+        # Find index
+        if is_pole:
+            k_idx = next((i + 1 for i, p in enumerate(poles) if np.isclose(cp, p)), "k")
+        else:
+            k_idx = next((i + 1 for i, z in enumerate(zeros) if np.isclose(cp, z)), "k")
+            
+        cp_str = format_complex_frac(cp)
+        st.markdown(f"**{'Polo' if is_pole else 'Zero'} ${sing_char}_{{{k_idx}}} = {cp_str}$:**")
         
         st.markdown(f"**Angulos dos outros {sing_type}:**")
         if vecs_same:
             for v in vecs_same:
                 orig = v["pole"] if is_pole else v["zero"]
+                if is_pole:
+                    j_idx = next((i + 1 for i, p in enumerate(poles) if np.isclose(orig, p)), "j")
+                else:
+                    j_idx = next((i + 1 for i, z in enumerate(zeros) if np.isclose(orig, z)), "j")
+                    
                 c_calc = v["vector"]
                 ang = v["angle_deg"]
-                st.latex(rf"\angle ({sing_char}_k - {sing_char}_j) = \angle ({format_complex_frac(cp)} - ({format_complex_frac(orig)})) = \angle ({format_complex_frac(c_calc)}) = {format_frac(ang)}^\\circ")
+                orig_str = format_complex_frac(orig)
+                orig_disp = f"({orig_str})" if "-" in orig_str or "+" in orig_str else orig_str
+                st.latex(rf"\angle ({sing_char}_{{{k_idx}}} - {sing_char}_{{{j_idx}}}) = \angle ({cp_str} - {orig_disp}) = \angle ({format_complex_frac(c_calc)}) = {format_frac(ang)}^\\circ")
         else:
             st.markdown(f"Nao ha outros {sing_type}.")
             
@@ -461,25 +476,33 @@ def render_phasor_angles(details, is_pole, format_complex_frac, format_frac, st)
         if vecs_diff:
             for v in vecs_diff:
                 orig = v["zero"] if is_pole else v["pole"]
+                if is_pole:
+                    j_idx = next((i + 1 for i, z in enumerate(zeros) if np.isclose(orig, z)), "j")
+                else:
+                    j_idx = next((i + 1 for i, p in enumerate(poles) if np.isclose(orig, p)), "j")
+                
                 c_calc = v["vector"]
                 ang = v["angle_deg"]
-                st.latex(rf"\angle ({sing_char}_k - {other_char}_j) = \angle ({format_complex_frac(cp)} - ({format_complex_frac(orig)})) = \angle ({format_complex_frac(c_calc)}) = {format_frac(ang)}^\\circ")
+                orig_str = format_complex_frac(orig)
+                orig_disp = f"({orig_str})" if "-" in orig_str or "+" in orig_str else orig_str
+                st.latex(rf"\angle ({sing_char}_{{{k_idx}}} - {other_char}_{{{j_idx}}}) = \angle ({cp_str} - {orig_disp}) = \angle ({format_complex_frac(c_calc)}) = {format_frac(ang)}^\\circ")
         else:
             st.markdown(f"Nao ha {'zeros' if is_pole else 'polos'}.")
             
         st.markdown("**Somatorios:**")
-        st.latex(rf"\sum \angle ({sing_char}_k - {sing_char}_j) = {format_frac(sum_same)}^\\circ")
-        st.latex(rf"\sum \angle ({sing_char}_k - {other_char}_j) = {format_frac(sum_diff)}^\\circ")
+        st.latex(rf"\sum \angle ({sing_char}_{{{k_idx}}} - {sing_char}_j) = {format_frac(sum_same)}^\\circ")
+        st.latex(rf"\sum \angle ({sing_char}_{{{k_idx}}} - {other_char}_j) = {format_frac(sum_diff)}^\\circ")
         
         st.markdown("**Resultado:**")
         for b in item["branches"]:
             q = b["q"]
             norm = b["norm"]
-            a360 = b["a360"]
+            theta_sub = rf"\theta_{{d, {k_idx}}}" if is_pole else rf"\theta_{{a, {k_idx}}}"
+            
             if m == 1:
-                st.latex(rf"{theta_char} = 180^\circ - ({format_frac(sum_same)}^\circ) + ({format_frac(sum_diff)}^\circ) = {format_frac(norm)}^\\circ")
+                st.latex(rf"{theta_sub} = 180^\circ - ({format_frac(sum_same)}^\circ) + ({format_frac(sum_diff)}^\circ) = {format_frac(norm)}^\\circ")
             else:
-                st.latex(rf"q = {q} \implies {theta_char} = \frac{{180^\circ({2*q+1}) - ({format_frac(sum_same)}^\circ) + ({format_frac(sum_diff)}^\circ)}}{{{m}}} = {format_frac(norm)}^\\circ")
+                st.latex(rf"q = {q} \implies {theta_sub} = \frac{{180^\circ({2*q+1}) - ({format_frac(sum_same)}^\circ) + ({format_frac(sum_diff)}^\circ)}}{{{m}}} = {format_frac(norm)}^\\circ")
             
             # Conjugado
             st.markdown(f"**Conjugado:** {format_frac(-norm if norm != 0 else 0)}^\\circ")
@@ -875,8 +898,8 @@ def main():
                         z_str = ", ".join([f"{format_complex_frac(z)}" for z in zeros])
                         st.latex(rf"z_j \in \{{{z_str}\}} \implies \text{{Im}}(z_j) = 0 \quad \forall z_j")
                 else:
-                    render_phasor_angles(dep_arr.get("pole_details", []), True, format_complex_frac, format_frac, st)
-                    render_phasor_angles(dep_arr.get("zero_details", []), False, format_complex_frac, format_frac, st)
+                    render_phasor_angles(dep_arr.get("pole_details", []), True, poles, zeros, format_complex_frac, format_frac, st)
+                    render_phasor_angles(dep_arr.get("zero_details", []), False, poles, zeros, format_complex_frac, format_frac, st)
                 st.markdown("**Esboço Final do LGR:**")
                 render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax)
                 st.markdown("---")
@@ -2404,11 +2427,11 @@ def main():
                     )
                 else:
                     if pole_details:
-                        render_phasor_angles(pole_details, True, format_complex_frac, format_frac, st)
+                        render_phasor_angles(pole_details, True, poles, zeros, format_complex_frac, format_frac, st)
 
                     if zero_details:
                         st.markdown("---")
-                        render_phasor_angles(zero_details, False, format_complex_frac, format_frac, st)
+                        render_phasor_angles(zero_details, False, poles, zeros, format_complex_frac, format_frac, st)
 
                 # 3. Visualização Gráfica no Plano s
                 st.markdown("---")
