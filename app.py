@@ -930,52 +930,104 @@ def main():
             if show_item_b:
                 st.markdown("### ▼ ITEM (b): TESTE DE PONTO CANDIDATO E GANHO K")
                 s0_str = format_complex_frac(s0)
-                st.markdown(f"**Ponto testado:** $s_i = {s0_str}$")
+                s0_disp = f"({s0_str})" if "-" in s0_str or "+" in s0_str else s0_str
                 test_details = evaluate_test_point_details(s0, poles, zeros, D_coeffs, N_coeffs, atol_deg=tol_deg)
                 
-                st.markdown("**• Critério de Ângulo (Pertinência ao LGR):**")
-                sum_z_terms_list = []
-                for vz in test_details["vecs_z"]:
-                    st.markdown(rf"&nbsp;&nbsp; - Do zero $z_{{{vz['index']}}} = {format_root(vz['zero'])}$ até $s_i$: $\phi_{{{vz['index']}}} = {format_frac(vz['angle_deg'])}^\circ$")
-                    sum_z_terms_list.append(f"({format_frac(vz['angle_deg'])}°)")
-                if not test_details["vecs_z"]:
-                    st.markdown("&nbsp;&nbsp; - Não há zeros na malha aberta.")
+                st.markdown("**Condição de pertinência ao LGR:**")
+                st.latex(r"\sum \angle(s_0 - z_j) - \sum \angle(s_0 - p_i) = \pm 180^\circ(2q+1)")
+                st.markdown(f"**Ponto de teste:** $s_0 = {s0_str}$")
                 
-                sum_p_terms_list = []
-                for vp in test_details["vecs_p"]:
-                    st.markdown(rf"&nbsp;&nbsp; - Do pólo $p_{{{vp['index']}}} = {format_root(vp['pole'])}$ até $s_i$: $\theta_{{{vp['index']}}} = {format_frac(vp['angle_deg'])}^\circ$")
-                    sum_p_terms_list.append(f"({format_frac(vp['angle_deg'])}°)")
+                st.markdown("**Ângulos dos polos ($\\theta_i$):**")
                 if not test_details["vecs_p"]:
-                    st.markdown("&nbsp;&nbsp; - Não há pólos na malha aberta.")
+                    st.markdown("*(Não há pólos no sistema)*")
+                    st.latex(r"\sum \theta_i = 0.00^\circ")
+                else:
+                    for vp in test_details["vecs_p"]:
+                        idx = vp["index"]
+                        p_str = format_complex_frac(vp["pole"])
+                        p_disp = f"({p_str})" if "-" in p_str or "+" in p_str else p_str
+                        v_str = format_complex_frac(vp["vector"])
+                        a_str = format_frac(vp["angle_deg"])
+                        st.latex(rf"\theta_{{{idx}}} = \angle(s_0 - p_{{{idx}}}) = \angle({s0_disp} - {p_disp}) = \angle({v_str}) = {a_str}^\circ")
+                    st.latex(rf"\sum \theta_i = {format_frac(test_details['sum_p'])}^\circ")
                 
-                sum_z_terms = " + ".join(sum_z_terms_list) or "0°"
-                sum_p_terms = " + ".join(sum_p_terms_list) or "0°"
-                total_angle = test_details["total_angle"]
+                st.markdown("**Ângulos dos zeros ($\\phi_j$):**")
+                if not test_details["vecs_z"]:
+                    st.markdown("*(Não há zeros no sistema)*")
+                    st.latex(r"\sum \phi_j = 0.00^\circ")
+                else:
+                    for vz in test_details["vecs_z"]:
+                        idx = vz["index"]
+                        z_str = format_complex_frac(vz["zero"])
+                        z_disp = f"({z_str})" if "-" in z_str or "+" in z_str else z_str
+                        v_str = format_complex_frac(vz["vector"])
+                        a_str = format_frac(vz["angle_deg"])
+                        st.latex(rf"\phi_{{{idx}}} = \angle(s_0 - z_{{{idx}}}) = \angle({s0_disp} - {z_disp}) = \angle({v_str}) = {a_str}^\circ")
+                    st.latex(rf"\sum \phi_j = {format_frac(test_details['sum_z'])}^\circ")
+                
+                st.markdown("**Avaliação:**")
+                delta_theta = test_details['sum_p'] - test_details['sum_z']
+                st.latex(rf"\Delta\theta = \sum \theta_i - \sum \phi_j = {format_frac(test_details['sum_p'])}^\circ - {format_frac(test_details['sum_z'])}^\circ = {format_frac(delta_theta)}^\circ")
+                norm_angle = test_details['normalized_angle']
+                st.markdown(f"Ângulo normalizado: **{format_frac(norm_angle)}°**")
                 is_lgr = test_details["is_lgr"]
                 if is_lgr:
-                    st.latex(rf"\Sigma \phi_j - \Sigma \theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\circ \approx \pm 180^\circ")
-                    st.success(f"**RESULTADO: O PONTO PERTENCE AO LGR (Tolerância: ±{tol_deg}°)**")
-                    
-                    st.markdown("**• Critério de Módulo (Cálculo de K):**")
-                    dist_p_terms_list = []
-                    for vp in test_details["vecs_p"]:
-                        st.markdown(f"&nbsp;&nbsp; - Distância do pólo $p_{{{vp['index']}}}$ até $s_i$: $d_{{p{vp['index']}}} = {format_frac(vp['dist'])} $")
-                        dist_p_terms_list.append(format_frac(vp["dist"]))
-                    dist_z_terms_list = []
-                    for vz in test_details["vecs_z"]:
-                        st.markdown(f"&nbsp;&nbsp; - Distância do zero $z_{{{vz['index']}}}$ até $s_i$: $d_{{z{vz['index']}}} = {format_frac(vz['dist'])} $")
-                        dist_z_terms_list.append(format_frac(vz["dist"]))
-                    
-                    dist_p_terms = " \\cdot ".join(dist_p_terms_list) or "1"
-                    dist_z_terms = " \\cdot ".join(dist_z_terms_list) or "1"
-                    scale_factor = (abs(N_coeffs[0])/abs(D_coeffs[0])) if D_coeffs[0] != 0 else 1.0
-                    scale_str = f"{format_frac(scale_factor)} \\cdot " if scale_factor != 1.0 else ""
-                    K_val = test_details["K"]
-                    st.latex(f"K = \\frac{{\\prod d_{{pi}}}}{{{scale_str}\\prod d_{{zj}}}} = \\frac{{{dist_p_terms}}}{{{scale_str}{dist_z_terms}}} = {format_frac(K_val)}")
-                    st.success(f"**RESULTADO: K = {format_frac(K_val)}**")
+                    st.success(rf"O ponto pertence ao LGR ($\Delta\theta = {format_frac(delta_theta)}^\circ \approx \pm 180^\circ$)")
                 else:
-                    st.latex(rf"\Sigma \phi_j - \Sigma \theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\circ \neq \pm 180^\circ")
-                    st.error(f"**RESULTADO: O PONTO NÃO PERTENCE AO LGR (Fora da tolerância de ±{tol_deg}°)**")
+                    st.error(rf"O ponto não pertence ao LGR ($\Delta\theta = {format_frac(delta_theta)}^\circ \neq \pm 180^\circ$)")
+                
+                st.markdown("---")
+                st.markdown("**Cálculo de K**")
+                st.markdown("**Fórmula do critério de módulo:**")
+                scale_factor = (abs(N_coeffs[0])/abs(D_coeffs[0])) if D_coeffs[0] != 0 else 1.0
+                scale_str = f"{format_frac(scale_factor)} \\cdot " if scale_factor != 1.0 else ""
+                st.latex(rf"K = \frac{{\prod |s_0 - p_i|}}{{{scale_str}\prod |s_0 - z_j|}}")
+                st.markdown(f"**Ponto:** $s_0 = {s0_str}$")
+                
+                st.markdown("**Distâncias dos polos:**")
+                if not test_details["vecs_p"]:
+                    st.markdown("*(Não há pólos no sistema)*")
+                    prod_p_str = "1"
+                else:
+                    d_p_strs = []
+                    for vp in test_details["vecs_p"]:
+                        idx = vp["index"]
+                        p_str = format_complex_frac(vp["pole"])
+                        p_disp = f"({p_str})" if "-" in p_str or "+" in p_str else p_str
+                        v_str = format_complex_frac(vp["vector"])
+                        d_str = format_frac(vp["dist"])
+                        d_p_strs.append(d_str)
+                        st.latex(rf"|s_0 - p_{{{idx}}}| = |{s0_disp} - {p_disp}| = |{v_str}| = {d_str}")
+                    st.markdown("**Produto das distâncias dos polos:**")
+                    prod_p_str = " \\cdot ".join(d_p_strs)
+                    st.latex(rf"\prod |s_0 - p_i| = {prod_p_str} = {format_frac(test_details['prod_p'])}")
+                
+                st.markdown("**Distâncias dos zeros:**")
+                if not test_details["vecs_z"]:
+                    st.markdown("*(Não há zeros no sistema)*")
+                    prod_z_str = "1"
+                else:
+                    d_z_strs = []
+                    for vz in test_details["vecs_z"]:
+                        idx = vz["index"]
+                        z_str = format_complex_frac(vz["zero"])
+                        z_disp = f"({z_str})" if "-" in z_str or "+" in z_str else z_str
+                        v_str = format_complex_frac(vz["vector"])
+                        d_str = format_frac(vz["dist"])
+                        d_z_strs.append(d_str)
+                        st.latex(rf"|s_0 - z_{{{idx}}}| = |{s0_disp} - {z_disp}| = |{v_str}| = {d_str}")
+                    st.markdown("**Produto das distâncias dos zeros:**")
+                    prod_z_str = " \\cdot ".join(d_z_strs)
+                    st.latex(rf"\prod |s_0 - z_j| = {prod_z_str} = {format_frac(test_details['prod_z'])}")
+                
+                st.markdown("**Resultado:**")
+                K_val = test_details["K"]
+                st.latex(rf"K = \frac{{{format_frac(test_details['prod_p'])}}}{{{scale_str}{format_frac(test_details['prod_z'])}}} = {format_frac(K_val)}")
+                
+                if is_lgr:
+                    st.success(f"O ponto pertence ao LGR. **K = {format_frac(K_val)}**")
+                else:
+                    st.warning(f"O ponto não pertence ao LGR. **K = {format_frac(K_val)}** (valor de referência)")
                 
                 st.markdown("**Gráfico dos Vetores:**")
                 fig_test = plot_test_point_vectors(poles, zeros, s0, test_details, xmin, xmax, ymin, ymax)
