@@ -468,7 +468,7 @@ def render_phasor_angles(details, is_pole, poles, zeros, format_complex_frac, fo
                 ang = v["angle_deg"]
                 orig_str = format_complex_frac(orig)
                 orig_disp = f"({orig_str})" if "-" in orig_str or "+" in orig_str else orig_str
-                st.latex(rf"\angle ({sing_char}_{{{k_idx}}} - {sing_char}_{{{j_idx}}}) = \angle ({cp_str} - {orig_disp}) = \angle ({format_complex_frac(c_calc)}) = {format_frac(ang)}^\\circ")
+                st.latex(rf"\angle ({sing_char}_{{{k_idx}}} - {sing_char}_{{{j_idx}}}) = \angle ({cp_str} - {orig_disp}) = \angle ({format_complex_frac(c_calc)}) = {format_frac(ang)}^\circ")
         else:
             st.markdown(f"Não há outros {sing_type}.")
             
@@ -485,13 +485,13 @@ def render_phasor_angles(details, is_pole, poles, zeros, format_complex_frac, fo
                 ang = v["angle_deg"]
                 orig_str = format_complex_frac(orig)
                 orig_disp = f"({orig_str})" if "-" in orig_str or "+" in orig_str else orig_str
-                st.latex(rf"\angle ({sing_char}_{{{k_idx}}} - {other_char}_{{{j_idx}}}) = \angle ({cp_str} - {orig_disp}) = \angle ({format_complex_frac(c_calc)}) = {format_frac(ang)}^\\circ")
+                st.latex(rf"\angle ({sing_char}_{{{k_idx}}} - {other_char}_{{{j_idx}}}) = \angle ({cp_str} - {orig_disp}) = \angle ({format_complex_frac(c_calc)}) = {format_frac(ang)}^\circ")
         else:
             st.markdown(f"Não há {'zeros' if is_pole else 'polos'}.")
             
         st.markdown("**Somatórios:**")
-        st.latex(rf"\sum \angle ({sing_char}_{{{k_idx}}} - {sing_char}_j) = {format_frac(sum_same)}^\\circ")
-        st.latex(rf"\sum \angle ({sing_char}_{{{k_idx}}} - {other_char}_j) = {format_frac(sum_diff)}^\\circ")
+        st.latex(rf"\sum \angle ({sing_char}_{{{k_idx}}} - {sing_char}_j) = {format_frac(sum_same)}^\circ")
+        st.latex(rf"\sum \angle ({sing_char}_{{{k_idx}}} - {other_char}_j) = {format_frac(sum_diff)}^\circ")
         
         st.markdown("**Resultado:**")
         for b in item["branches"]:
@@ -500,12 +500,12 @@ def render_phasor_angles(details, is_pole, poles, zeros, format_complex_frac, fo
             theta_sub = rf"\theta_{{d, {k_idx}}}" if is_pole else rf"\theta_{{a, {k_idx}}}"
             
             if m == 1:
-                st.latex(rf"{theta_sub} = 180^\circ - ({format_frac(sum_same)}^\circ) + ({format_frac(sum_diff)}^\circ) = {format_frac(norm)}^\\circ")
+                st.latex(rf"{theta_sub} = 180^\circ - ({format_frac(sum_same)}^\circ) + ({format_frac(sum_diff)}^\circ) = {format_frac(norm)}^\circ")
             else:
-                st.latex(rf"q = {q} \implies {theta_sub} = \frac{{180^\circ({2*q+1}) - ({format_frac(sum_same)}^\circ) + ({format_frac(sum_diff)}^\circ)}}{{{m}}} = {format_frac(norm)}^\\circ")
+                st.latex(rf"q = {q} \implies {theta_sub} = \frac{{180^\circ({2*q+1}) - ({format_frac(sum_same)}^\circ) + ({format_frac(sum_diff)}^\circ)}}{{{m}}} = {format_frac(norm)}^\circ")
             
             # Conjugado
-            st.markdown(f"**Conjugado:** {format_frac(-norm if norm != 0 else 0)}^\\circ")
+            st.markdown(rf"**Conjugado:** ${format_frac(-norm if norm != 0 else 0)}^\circ$")
 
 
 def main():
@@ -778,7 +778,7 @@ def main():
                     st.latex(f"\\sigma_A = \\frac{{\\sum p_i - \\sum z_i}}{{n_P - n_Z}} = \\frac{{[{sum_p_str}] - [{sum_z_str}]}}{{{nP} - {nZ}}} = {sigma_a_val}")
                     angles_A = [(2 * q + 1) * 180 / abs(nP - nZ) for q in range(abs(nP - nZ))]
                     for q, a in enumerate(angles_A):
-                        st.latex(f"\\theta_{{{q}}} = \\frac{{180^\\circ(2({q})+1)}}{{|n_P - n_Z|}} = {format_frac(a)}^\\circ")
+                        st.latex(f"\\theta_{{{q}}} = \\frac{{180^\circ(2({q})+1)}}{{|n_P - n_Z|}} = {format_frac(a)}^\circ")
                 st.markdown("**8. Pontos de Saída/Entrada**")
                 D_sym = breakaway_details["D_sym"]
                 N_sym = breakaway_details["N_sym"]
@@ -913,14 +913,14 @@ def main():
                 st.markdown("**• Critério de Ângulo (Pertinência ao LGR):**")
                 sum_z_terms_list = []
                 for vz in test_details["vecs_z"]:
-                    st.markdown(f"&nbsp;&nbsp; - Do zero $z_{{{vz['index']}}} = {format_root(vz['zero'])}$ até $s_i$: $\\phi_{{{vz['index']}}} = {format_frac(vz['angle_deg'])}^\\circ$")
+                    st.markdown(f"&nbsp;&nbsp; - Do zero $z_{{{vz['index']}}} = {format_root(vz['zero'])}$ até $s_i$: $\\phi_{{{vz['index']}}} = {format_frac(vz['angle_deg'])}^\circ$")
                     sum_z_terms_list.append(f"({format_frac(vz['angle_deg'])}°)")
                 if not test_details["vecs_z"]:
                     st.markdown("&nbsp;&nbsp; - Não há zeros na malha aberta.")
                 
                 sum_p_terms_list = []
                 for vp in test_details["vecs_p"]:
-                    st.markdown(f"&nbsp;&nbsp; - Do pólo $p_{{{vp['index']}}} = {format_root(vp['pole'])}$ até $s_i$: $\\theta_{{{vp['index']}}} = {format_frac(vp['angle_deg'])}^\\circ$")
+                    st.markdown(f"&nbsp;&nbsp; - Do pólo $p_{{{vp['index']}}} = {format_root(vp['pole'])}$ até $s_i$: $\\theta_{{{vp['index']}}} = {format_frac(vp['angle_deg'])}^\circ$")
                     sum_p_terms_list.append(f"({format_frac(vp['angle_deg'])}°)")
                 if not test_details["vecs_p"]:
                     st.markdown("&nbsp;&nbsp; - Não há pólos na malha aberta.")
@@ -930,7 +930,7 @@ def main():
                 total_angle = test_details["total_angle"]
                 is_lgr = test_details["is_lgr"]
                 if is_lgr:
-                    st.latex(f"\\Sigma \\phi_j - \\Sigma \\theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\\circ \\approx \\pm 180^\\circ")
+                    st.latex(f"\\Sigma \\phi_j - \\Sigma \\theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\circ \\approx \\pm 180^\circ")
                     st.success(f"**RESULTADO: O PONTO PERTENCE AO LGR (Tolerância: ±{tol_deg}°)**")
                     
                     st.markdown("**• Critério de Módulo (Cálculo de K):**")
@@ -951,7 +951,7 @@ def main():
                     st.latex(f"K = \\frac{{\\prod d_{{pi}}}}{{{scale_str}\\prod d_{{zj}}}} = \\frac{{{dist_p_terms}}}{{{scale_str}{dist_z_terms}}} = {format_frac(K_val)}")
                     st.success(f"**RESULTADO: K = {format_frac(K_val)}**")
                 else:
-                    st.latex(f"\\Sigma \\phi_j - \\Sigma \\theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\\circ \neq \\pm 180^\\circ")
+                    st.latex(f"\\Sigma \\phi_j - \\Sigma \\theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\circ \neq \\pm 180^\circ")
                     st.error(f"**RESULTADO: O PONTO NÃO PERTENCE AO LGR (Fora da tolerância de ±{tol_deg}°)**")
                 
                 st.markdown("**Gráfico dos Vetores:**")
@@ -2630,13 +2630,13 @@ def main():
                         ds_str = format_frac(vp["delta_sigma"])
                         dw_str = format_frac(vp["delta_omega"])
                         mag_str = format_frac(vp["dist"])
-                        ang_str = f"{format_frac(vp['angle_deg'])}^\\circ"
+                        ang_str = f"{format_frac(vp['angle_deg'])}^\circ"
                         p_table.append(
                             f"| $p_{{{vp['index']}}} = {p_orig}$ | ${v_str}$ | $\\Delta\\sigma = {ds_str}, \\Delta\\omega = {dw_str}$ | ${mag_str}$ | ${ang_str}$ |"
                         )
                     st.markdown("\n".join(p_table))
-                    sum_p_terms = " + ".join([f"({format_frac(vp['angle_deg'])}^\\circ)" for vp in vecs_p])
-                    st.latex(rf"\sum_{{i=1}}^{{nP}} \theta_{{p_i}} = {sum_p_terms} = {format_frac(sum_p)}^\\circ")
+                    sum_p_terms = " + ".join([f"({format_frac(vp['angle_deg'])}^\circ)" for vp in vecs_p])
+                    st.latex(rf"\sum_{{i=1}}^{{nP}} \theta_{{p_i}} = {sum_p_terms} = {format_frac(sum_p)}^\circ")
                 else:
                     st.markdown(r"*(Não há polos no sistema)* $\implies \sum \theta_p = 0^\circ$.")
 
@@ -2654,13 +2654,13 @@ def main():
                         ds_str = format_frac(vz["delta_sigma"])
                         dw_str = format_frac(vz["delta_omega"])
                         mag_str = format_frac(vz["dist"])
-                        ang_str = f"{format_frac(vz['angle_deg'])}^\\circ"
+                        ang_str = f"{format_frac(vz['angle_deg'])}^\circ"
                         z_table.append(
                             f"| $z_{{{vz['index']}}} = {z_orig}$ | ${w_str}$ | $\\Delta\\sigma = {ds_str}, \\Delta\\omega = {dw_str}$ | ${mag_str}$ | ${ang_str}$ |"
                         )
                     st.markdown("\n".join(z_table))
-                    sum_z_terms = " + ".join([f"({format_frac(vz['angle_deg'])}^\\circ)" for vz in vecs_z])
-                    st.latex(rf"\sum_{{j=1}}^{{nZ}} \phi_{{z_j}} = {sum_z_terms} = {format_frac(sum_z)}^\\circ")
+                    sum_z_terms = " + ".join([f"({format_frac(vz['angle_deg'])}^\circ)" for vz in vecs_z])
+                    st.latex(rf"\sum_{{j=1}}^{{nZ}} \phi_{{z_j}} = {sum_z_terms} = {format_frac(sum_z)}^\circ")
                 else:
                     st.markdown(r"*(Não há zeros no sistema)* $\implies \sum \phi_z = 0^\circ$.")
 
