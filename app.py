@@ -22,7 +22,7 @@ from lgr_math import (
     calculate_departure_arrival_angles,
     evaluate_test_point_details,
 )
-from lgr_plots import create_base_plot, add_poles_zeros_traces, plot_test_point_vectors, generate_fig7_asymptotes, generate_fig8_breakaway, generate_fig9_crossings, generate_fig10_angles
+from lgr_plots import create_base_plot, add_poles_zeros_traces, plot_test_point_vectors
 
 st.set_page_config(page_title="LGR - 12 Passos", layout="wide")
 
@@ -784,16 +784,10 @@ def main():
                     sum_p_str = " + ".join([f"({format_complex_frac(p)})" for p in poles]) or "0"
                     sum_z_str = " + ".join([f"({format_complex_frac(z)})" for z in zeros]) or "0"
                     sigma_a_val = format_frac(np.real(sigma_A))
-                    st.latex(f"\\sigma_A = \\frac{{\\sum p_i - \\sum z_i}}{{n_P - n_Z
-                fig7 = generate_fig7_asymptotes(poles, zeros, sigma_A, angles_A, xmin, xmax, ymin, ymax, length_max)
-                st.plotly_chart(fig7, width="stretch", config={"scrollZoom": True})}} = \\frac{{[{sum_p_str}] - [{sum_z_str}]}}{{{nP} - {nZ}}} = {sigma_a_val}")
+                    st.latex(f"\\sigma_A = \\frac{{\\sum p_i - \\sum z_i}}{{n_P - n_Z}} = \\frac{{[{sum_p_str}] - [{sum_z_str}]}}{{{nP} - {nZ}}} = {sigma_a_val}")
                     angles_A = [(2 * q + 1) * 180 / abs(nP - nZ) for q in range(abs(nP - nZ))]
                     for q, a in enumerate(angles_A):
-                        st.latex(f"\\theta_{{{q}}} = \\frac{{180^\circ(2({q})+1)}}{{|n_P - n_Z
-                fig7 = generate_fig7_asymptotes(poles, zeros, sigma_A, angles_A, xmin, xmax, ymin, ymax, length_max)
-                st.plotly_chart(fig7, width="stretch", config={"scrollZoom": True})|}} = {format_frac(a)}^\circ")
-                fig7 = generate_fig7_asymptotes(poles, zeros, sigma_A, angles_A, xmin, xmax, ymin, ymax, length_max)
-                st.plotly_chart(fig7, width="stretch", config={"scrollZoom": True})
+                        st.latex(rf"\theta_{{{q}}} = \frac{{180^\circ(2({q})+1)}}{{|n_P - n_Z|}} = {format_frac(a)}^\circ")
                 st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**8. Pontos de Saída/Entrada**")
                 D_sym = breakaway_details["D_sym"]
@@ -918,8 +912,6 @@ def main():
                 else:
                     render_phasor_angles(dep_arr.get("pole_details", []), True, poles, zeros, format_complex_frac, format_frac, st)
                     render_phasor_angles(dep_arr.get("zero_details", []), False, poles, zeros, format_complex_frac, format_frac, st)
-                fig10 = generate_fig10_angles(poles, zeros, dep_arr.get("has_complex"), dep_arr.get("pole_details", []), dep_arr.get("zero_details", []), xmin, xmax, ymin, ymax)
-                st.plotly_chart(fig10, width="stretch", config={"scrollZoom": True})
                 st.markdown("**Esboço Final do LGR:**")
                 render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax)
                 st.markdown("---")
@@ -933,14 +925,14 @@ def main():
                 st.markdown("**• Critério de Ângulo (Pertinência ao LGR):**")
                 sum_z_terms_list = []
                 for vz in test_details["vecs_z"]:
-                    st.markdown(f"&nbsp;&nbsp; - Do zero $z_{{{vz['index']}}} = {format_root(vz['zero'])}$ até $s_i$: $\\phi_{{{vz['index']}}} = {format_frac(vz['angle_deg'])}^\circ$")
+                    st.markdown(rf"&nbsp;&nbsp; - Do zero $z_{{{vz['index']}}} = {format_root(vz['zero'])}$ até $s_i$: $\phi_{{{vz['index']}}} = {format_frac(vz['angle_deg'])}^\circ$")
                     sum_z_terms_list.append(f"({format_frac(vz['angle_deg'])}°)")
                 if not test_details["vecs_z"]:
                     st.markdown("&nbsp;&nbsp; - Não há zeros na malha aberta.")
                 
                 sum_p_terms_list = []
                 for vp in test_details["vecs_p"]:
-                    st.markdown(f"&nbsp;&nbsp; - Do pólo $p_{{{vp['index']}}} = {format_root(vp['pole'])}$ até $s_i$: $\\theta_{{{vp['index']}}} = {format_frac(vp['angle_deg'])}^\circ$")
+                    st.markdown(rf"&nbsp;&nbsp; - Do pólo $p_{{{vp['index']}}} = {format_root(vp['pole'])}$ até $s_i$: $\theta_{{{vp['index']}}} = {format_frac(vp['angle_deg'])}^\circ$")
                     sum_p_terms_list.append(f"({format_frac(vp['angle_deg'])}°)")
                 if not test_details["vecs_p"]:
                     st.markdown("&nbsp;&nbsp; - Não há pólos na malha aberta.")
@@ -950,7 +942,7 @@ def main():
                 total_angle = test_details["total_angle"]
                 is_lgr = test_details["is_lgr"]
                 if is_lgr:
-                    st.latex(f"\\Sigma \\phi_j - \\Sigma \\theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\circ \\approx \\pm 180^\circ")
+                    st.latex(rf"\Sigma \phi_j - \Sigma \theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\circ \approx \pm 180^\circ")
                     st.success(f"**RESULTADO: O PONTO PERTENCE AO LGR (Tolerância: ±{tol_deg}°)**")
                     
                     st.markdown("**• Critério de Módulo (Cálculo de K):**")
@@ -971,7 +963,7 @@ def main():
                     st.latex(f"K = \\frac{{\\prod d_{{pi}}}}{{{scale_str}\\prod d_{{zj}}}} = \\frac{{{dist_p_terms}}}{{{scale_str}{dist_z_terms}}} = {format_frac(K_val)}")
                     st.success(f"**RESULTADO: K = {format_frac(K_val)}**")
                 else:
-                    st.latex(f"\\Sigma \\phi_j - \\Sigma \\theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\circ \neq \\pm 180^\circ")
+                    st.latex(rf"\Sigma \phi_j - \Sigma \theta_i = ({sum_z_terms}) - ({sum_p_terms}) = {format_frac(total_angle)}^\circ \neq \pm 180^\circ")
                     st.error(f"**RESULTADO: O PONTO NÃO PERTENCE AO LGR (Fora da tolerância de ±{tol_deg}°)**")
                 
                 st.markdown("**Gráfico dos Vetores:**")
@@ -1310,9 +1302,7 @@ def main():
                     if not sum_z_str:
                         sum_z_str = "0"
 
-                    st.latex(r"\sigma_A = \frac{\sum p_i - \sum z_i}{n_P - n_Z
-                fig7 = generate_fig7_asymptotes(poles, zeros, sigma_A, angles_A, xmin, xmax, ymin, ymax, length_max)
-                st.plotly_chart(fig7, width="stretch", config={"scrollZoom": True})}")
+                    st.latex(r"\sigma_A = \frac{\sum p_i - \sum z_i}{n_P - n_Z}")
                     st.latex(
                         rf"\sigma_A = \frac{{[{sum_p_str}] - [{sum_z_str}]}}{{{nP} - {nZ}}} = {format_frac(np.real(sigma_A))}"
                     )
@@ -1324,11 +1314,7 @@ def main():
 
                     st.markdown(r"**Ângulos das assíntotas ($\theta_k$):**")
                     st.latex(
-                        r"\theta_k = \frac{(2k + 1) \cdot 180^\circ}{|n_P - n_Z
-                fig7 = generate_fig7_asymptotes(poles, zeros, sigma_A, angles_A, xmin, xmax, ymin, ymax, length_max)
-                st.plotly_chart(fig7, width="stretch", config={"scrollZoom": True})|} \quad \text{para } k = 0, 1, \dots, |n_P - n_Z
-                fig7 = generate_fig7_asymptotes(poles, zeros, sigma_A, angles_A, xmin, xmax, ymin, ymax, length_max)
-                st.plotly_chart(fig7, width="stretch", config={"scrollZoom": True})| - 1"
+                        r"\theta_k = \frac{(2k + 1) \cdot 180^\circ}{|n_P - n_Z|} \quad \text{para } k = 0, 1, \dots, |n_P - n_Z| - 1"
                     )
                     for k, angle in enumerate(angles_A):
                         st.latex(
@@ -1791,7 +1777,95 @@ def main():
                     )
 
                     with tab_plane:
-                        fig8 = generate_fig8_breakaway(poles, zeros, segment_coords, candidates, xmin, xmax, ymin, ymax)
+                        fig8 = create_base_plot(
+                            poles,
+                            zeros,
+                            "Pontos de Saída e Entrada no Plano s",
+                            xmin,
+                            xmax,
+                            ymin,
+                            ymax,
+                            draw_poles_zeros=False,
+                        )
+
+                        # Real axis segments
+                        final_x = []
+                        final_y = []
+                        for start, end in segment_coords:
+                            final_x.extend([start, end, None])
+                            final_y.extend([0, 0, None])
+
+                        fig8.add_trace(
+                            go.Scatter(
+                                x=final_x,
+                                y=final_y,
+                                mode="lines",
+                                line=dict(color="#00b4d8", width=5),
+                                name="Segmentos LGR Real",
+                                hoverinfo="skip",
+                            )
+                        )
+
+                        # Plot valid points
+                        for cand in candidates:
+                            if cand["is_valid"]:
+                                s_pt = cand["s_val"]
+                                k_pt = cand["K_real"]
+                                cls = cand["classification"]
+                                x_pt = float(np.real(s_pt))
+                                y_pt = float(np.imag(s_pt))
+                                s_lbl = format_complex_frac(s_pt)
+                                k_lbl = format_frac(k_pt)
+
+                                if cls == "breakaway":
+                                    color_m = "#00ff88"
+                                    name_m = "Ponto de Saída"
+                                    tag = "Saída"
+                                elif cls == "breakin":
+                                    color_m = "#ff9e00"
+                                    name_m = "Ponto de Entrada"
+                                    tag = "Entrada"
+                                else:
+                                    color_m = "#e040fb"
+                                    name_m = "Bifurcação"
+                                    tag = "Bifurcação"
+
+                                fig8.add_trace(
+                                    go.Scatter(
+                                        x=[x_pt],
+                                        y=[y_pt],
+                                        mode="markers",
+                                        marker=dict(
+                                            symbol="diamond",
+                                            size=14,
+                                            color=color_m,
+                                            line=dict(width=2, color="white"),
+                                        ),
+                                        name=f"{name_m} (s={s_lbl})",
+                                        hovertemplate=f"<b>{name_m}</b><br>s = {s_lbl}<br>K = {k_lbl}<extra></extra>",
+                                    )
+                                )
+
+                                fig8.add_annotation(
+                                    x=x_pt,
+                                    y=y_pt,
+                                    text=f"{tag}<br>s = {s_lbl}<br>K = {k_lbl}",
+                                    showarrow=True,
+                                    arrowhead=2,
+                                    arrowsize=1,
+                                    arrowwidth=2,
+                                    arrowcolor=color_m,
+                                    ax=0,
+                                    ay=-45 if y_pt >= 0 else 45,
+                                    font=dict(color="white", size=11),
+                                    bgcolor="rgba(14, 17, 23, 0.85)",
+                                    bordercolor=color_m,
+                                    borderwidth=1,
+                                    borderpad=3,
+                                )
+
+                        add_poles_zeros_traces(fig8, poles, zeros, show_labels=False)
+                        fig8.update_layout(height=520)
                         st.plotly_chart(fig8, width="stretch", config={"scrollZoom": True})
 
                     with tab_curve:
@@ -2214,7 +2288,125 @@ def main():
                 # 3. Visualização Gráfica no Plano s
                 st.markdown("---")
                 st.markdown(r"**3. Visualização Gráfica no Plano $s$:**")
-                fig9 = generate_fig9_crossings(poles, zeros, crossings_data, xmin, xmax, ymin, ymax)
+                fig9 = create_base_plot(
+                    poles,
+                    zeros,
+                    "Cruzamento com o Eixo Imaginário (jω)",
+                    xmin,
+                    xmax,
+                    ymin,
+                    ymax,
+                    draw_poles_zeros=False,
+                )
+
+                # Highlight imaginary axis
+                fig9.add_vline(
+                    x=0,
+                    line_dash="solid",
+                    line_color="rgba(0, 180, 216, 0.4)",
+                    line_width=2,
+                )
+
+                if crossings_data:
+                    for data in crossings_data:
+                        k_crit = data["k_crit"]
+                        omegas = data["omegas"]
+                        for w in omegas:
+                            # Upper crossing
+                            fig9.add_trace(
+                                go.Scatter(
+                                    x=[0],
+                                    y=[w],
+                                    mode="markers",
+                                    marker=dict(
+                                        symbol="star",
+                                        size=16,
+                                        color="#ff007f",
+                                        line=dict(width=2, color="white"),
+                                    ),
+                                    name=f"+{format_frac(w)}j (K={format_frac(k_crit)})",
+                                    hovertemplate=f"<b>Cruzamento jω</b><br>s = +{format_frac(w)}j<br>ω = {format_frac(w)} rad/s<br>K = {format_frac(k_crit)}<extra></extra>",
+                                )
+                            )
+                            fig9.add_annotation(
+                                x=0,
+                                y=w,
+                                text=f"<b>jω = +{format_frac(w)}</b><br>K = {format_frac(k_crit)}",
+                                showarrow=True,
+                                arrowhead=2,
+                                arrowsize=1,
+                                arrowwidth=2,
+                                arrowcolor="#ff007f",
+                                ax=50,
+                                ay=-30,
+                                font=dict(color="white", size=11),
+                                bgcolor="rgba(14, 17, 23, 0.85)",
+                                bordercolor="#ff007f",
+                                borderwidth=1,
+                                borderpad=3,
+                            )
+
+                            # Lower crossing
+                            fig9.add_trace(
+                                go.Scatter(
+                                    x=[0],
+                                    y=[-w],
+                                    mode="markers",
+                                    marker=dict(
+                                        symbol="star",
+                                        size=16,
+                                        color="#ff007f",
+                                        line=dict(width=2, color="white"),
+                                    ),
+                                    name=f"-{format_frac(w)}j (K={format_frac(k_crit)})",
+                                    hovertemplate=f"<b>Cruzamento jω</b><br>s = -{format_frac(w)}j<br>ω = {format_frac(w)} rad/s<br>K = {format_frac(k_crit)}<extra></extra>",
+                                )
+                            )
+                            fig9.add_annotation(
+                                x=0,
+                                y=-w,
+                                text=f"<b>jω = -{format_frac(w)}</b><br>K = {format_frac(k_crit)}",
+                                showarrow=True,
+                                arrowhead=2,
+                                arrowsize=1,
+                                arrowwidth=2,
+                                arrowcolor="#ff007f",
+                                ax=50,
+                                ay=30,
+                                font=dict(color="white", size=11),
+                                bgcolor="rgba(14, 17, 23, 0.85)",
+                                bordercolor="#ff007f",
+                                borderwidth=1,
+                                borderpad=3,
+                            )
+
+                            # Segment connecting the two conjugate crossings
+                            fig9.add_trace(
+                                go.Scatter(
+                                    x=[0, 0],
+                                    y=[-w, w],
+                                    mode="lines",
+                                    line=dict(color="#ff007f", width=2, dash="dash"),
+                                    name="Eixo de Oscilação",
+                                    showlegend=False,
+                                    hoverinfo="skip",
+                                )
+                            )
+                else:
+                    fig9.add_annotation(
+                        x=0,
+                        y=(ymin + ymax) * 0.25,
+                        text="<b>Sem cruzamento com jω para K > 0</b><br>Sistema permanece estável no SPE",
+                        showarrow=False,
+                        font=dict(color="#00ff88", size=12),
+                        bgcolor="rgba(14, 17, 23, 0.85)",
+                        bordercolor="#00ff88",
+                        borderwidth=1,
+                        borderpad=5,
+                    )
+
+                add_poles_zeros_traces(fig9, poles, zeros, show_labels=False)
+                fig9.update_layout(height=520)
                 st.plotly_chart(fig9, width="stretch", config={"scrollZoom": True})
 
             # Passo 10
@@ -2256,7 +2448,153 @@ def main():
                 # 3. Visualização Gráfica no Plano s
                 st.markdown("---")
                 st.markdown(r"### 3. Visualização Gráfica dos Vetores e Ângulos de Partida/Chegada:")
-                fig10 = generate_fig10_angles(poles, zeros, has_complex, pole_details, zero_details, xmin, xmax, ymin, ymax)
+                fig10 = create_base_plot(
+                    poles,
+                    zeros,
+                    "Ângulos de Partida e Chegada no Plano s",
+                    xmin,
+                    xmax,
+                    ymin,
+                    ymax,
+                    draw_poles_zeros=False,
+                )
+
+                if has_complex:
+                    arrow_len = max(0.8, (xmax - xmin) * 0.12)
+
+                    # Departure arrows for poles
+                    for pd in pole_details:
+                        cp = pd["pole"]
+                        for b in pd["branches"]:
+                            ang_deg = b["norm"]
+                            rad = np.radians(ang_deg)
+                            dx = arrow_len * np.cos(rad)
+                            dy = arrow_len * np.sin(rad)
+
+                            # Arrow line
+                            fig10.add_trace(
+                                go.Scatter(
+                                    x=[cp.real, cp.real + dx],
+                                    y=[cp.imag, cp.imag + dy],
+                                    mode="lines",
+                                    line=dict(color="#00f5d4", width=3),
+                                    name=f"Partida de {format_complex_frac(cp)} (θ={format_frac(ang_deg)}°)",
+                                    hovertemplate=f"<b>Ângulo de Partida</b><br>s = {format_complex_frac(cp)}<br>θ<sub>p</sub> = {format_frac(ang_deg)}°<extra></extra>",
+                                )
+                            )
+                            fig10.add_annotation(
+                                x=cp.real + dx,
+                                y=cp.imag + dy,
+                                ax=cp.real,
+                                ay=cp.imag,
+                                xref="x",
+                                yref="y",
+                                axref="x",
+                                ayref="y",
+                                showarrow=True,
+                                arrowhead=2,
+                                arrowsize=1.5,
+                                arrowwidth=3,
+                                arrowcolor="#00f5d4",
+                            )
+                            fig10.add_annotation(
+                                x=cp.real + dx * 1.15,
+                                y=cp.imag + dy * 1.15,
+                                text=f"<b>θ<sub>p</sub> = {format_frac(ang_deg)}°</b>",
+                                showarrow=False,
+                                font=dict(color="#00f5d4", size=11),
+                                bgcolor="rgba(14, 17, 23, 0.85)",
+                                bordercolor="#00f5d4",
+                                borderwidth=1,
+                                borderpad=3,
+                            )
+
+                            # Vectors from other poles to this complex pole (dashed)
+                            for vp in pd["vecs_p"]:
+                                p_orig = vp["pole"]
+                                fig10.add_trace(
+                                    go.Scatter(
+                                        x=[p_orig.real, cp.real],
+                                        y=[p_orig.imag, cp.imag],
+                                        mode="lines",
+                                        line=dict(color="rgba(255, 100, 100, 0.4)", width=1.5, dash="dot"),
+                                        showlegend=False,
+                                        hoverinfo="skip",
+                                    )
+                                )
+                            for vz in pd["vecs_z"]:
+                                z_orig = vz["zero"]
+                                fig10.add_trace(
+                                    go.Scatter(
+                                        x=[z_orig.real, cp.real],
+                                        y=[z_orig.imag, cp.imag],
+                                        mode="lines",
+                                        line=dict(color="rgba(100, 255, 100, 0.4)", width=1.5, dash="dot"),
+                                        showlegend=False,
+                                        hoverinfo="skip",
+                                    )
+                                )
+
+                    # Arrival arrows for zeros
+                    for zd in zero_details:
+                        cz = zd["zero"]
+                        for b in zd["branches"]:
+                            ang_deg = b["norm"]
+                            rad = np.radians(ang_deg)
+                            dx = arrow_len * np.cos(rad)
+                            dy = arrow_len * np.sin(rad)
+
+                            fig10.add_trace(
+                                go.Scatter(
+                                    x=[cz.real + dx, cz.real],
+                                    y=[cz.imag + dy, cz.imag],
+                                    mode="lines",
+                                    line=dict(color="#ffbe0b", width=3),
+                                    name=f"Chegada em {format_complex_frac(cz)} (θ={format_frac(ang_deg)}°)",
+                                    hovertemplate=f"<b>Ângulo de Chegada</b><br>s = {format_complex_frac(cz)}<br>θ<sub>z</sub> = {format_frac(ang_deg)}°<extra></extra>",
+                                )
+                            )
+                            fig10.add_annotation(
+                                x=cz.real,
+                                y=cz.imag,
+                                ax=cz.real + dx,
+                                ay=cz.imag + dy,
+                                xref="x",
+                                yref="y",
+                                axref="x",
+                                ayref="y",
+                                showarrow=True,
+                                arrowhead=2,
+                                arrowsize=1.5,
+                                arrowwidth=3,
+                                arrowcolor="#ffbe0b",
+                            )
+                            fig10.add_annotation(
+                                x=cz.real + dx * 1.15,
+                                y=cz.imag + dy * 1.15,
+                                text=f"<b>θ<sub>z</sub> = {format_frac(ang_deg)}°</b>",
+                                showarrow=False,
+                                font=dict(color="#ffbe0b", size=11),
+                                bgcolor="rgba(14, 17, 23, 0.85)",
+                                bordercolor="#ffbe0b",
+                                borderwidth=1,
+                                borderpad=3,
+                            )
+                else:
+                    fig10.add_annotation(
+                        x=(xmin + xmax) * 0.5,
+                        y=(ymin + ymax) * 0.5,
+                        text="<b>Não aplicável:</b> Sem polos ou zeros complexos conjugados.<br>Ramos iniciam e terminam ao longo do eixo real.",
+                        showarrow=False,
+                        font=dict(color="#00b4d8", size=13),
+                        bgcolor="rgba(14, 17, 23, 0.85)",
+                        bordercolor="#00b4d8",
+                        borderwidth=1,
+                        borderpad=6,
+                    )
+
+                add_poles_zeros_traces(fig10, poles, zeros, show_labels=False)
+                fig10.update_layout(height=520)
                 st.plotly_chart(fig10, width="stretch", config={"scrollZoom": True})
 
             # Passo 11
@@ -2304,12 +2642,12 @@ def main():
                         ds_str = format_frac(vp["delta_sigma"])
                         dw_str = format_frac(vp["delta_omega"])
                         mag_str = format_frac(vp["dist"])
-                        ang_str = f"{format_frac(vp['angle_deg'])}^\circ"
+                        ang_str = rf"{format_frac(vp['angle_deg'])}^\circ"
                         p_table.append(
                             f"| $p_{{{vp['index']}}} = {p_orig}$ | ${v_str}$ | $\\Delta\\sigma = {ds_str}, \\Delta\\omega = {dw_str}$ | ${mag_str}$ | ${ang_str}$ |"
                         )
                     st.markdown("\n".join(p_table))
-                    sum_p_terms = " + ".join([f"({format_frac(vp['angle_deg'])}^\circ)" for vp in vecs_p])
+                    sum_p_terms = " + ".join([rf"({format_frac(vp['angle_deg'])}^\circ)" for vp in vecs_p])
                     st.latex(rf"\sum_{{i=1}}^{{nP}} \theta_{{p_i}} = {sum_p_terms} = {format_frac(sum_p)}^\circ")
                 else:
                     st.markdown(r"*(Não há polos no sistema)* $\implies \sum \theta_p = 0^\circ$.")
@@ -2328,12 +2666,12 @@ def main():
                         ds_str = format_frac(vz["delta_sigma"])
                         dw_str = format_frac(vz["delta_omega"])
                         mag_str = format_frac(vz["dist"])
-                        ang_str = f"{format_frac(vz['angle_deg'])}^\circ"
+                        ang_str = rf"{format_frac(vz['angle_deg'])}^\circ"
                         z_table.append(
                             f"| $z_{{{vz['index']}}} = {z_orig}$ | ${w_str}$ | $\\Delta\\sigma = {ds_str}, \\Delta\\omega = {dw_str}$ | ${mag_str}$ | ${ang_str}$ |"
                         )
                     st.markdown("\n".join(z_table))
-                    sum_z_terms = " + ".join([f"({format_frac(vz['angle_deg'])}^\circ)" for vz in vecs_z])
+                    sum_z_terms = " + ".join([rf"({format_frac(vz['angle_deg'])}^\circ)" for vz in vecs_z])
                     st.latex(rf"\sum_{{j=1}}^{{nZ}} \phi_{{z_j}} = {sum_z_terms} = {format_frac(sum_z)}^\circ")
                 else:
                     st.markdown(r"*(Não há zeros no sistema)* $\implies \sum \phi_z = 0^\circ$.")
