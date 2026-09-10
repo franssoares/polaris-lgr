@@ -386,19 +386,20 @@ def generate_fig7_asymptotes(poles, zeros, sigma_A, angles_A, xmin, xmax, ymin, 
                 hoverinfo="skip",
             )
         )
-    fig7.add_trace(
-        go.Scatter(
-            x=[np.real(sigma_A)],
-            y=[0],
-            mode="markers+text",
-            marker=dict(symbol="star", size=14, color="orange", line=dict(width=2, color="white")),
-            text=["σ_A"],
-            textposition="top center",
-            textfont=dict(size=14, color="white"),
-            name=f"Centróide (σ_A = {format_frac(np.real(sigma_A))})",
-            hovertemplate=f"<b>Centróide</b><br>σ_A = {format_frac(np.real(sigma_A))}<extra></extra>",
+    if sigma_A is not None:
+        fig7.add_trace(
+            go.Scatter(
+                x=[np.real(sigma_A)],
+                y=[0],
+                mode="markers+text",
+                marker=dict(symbol="star", size=14, color="orange", line=dict(width=2, color="white")),
+                text=["σ_A"],
+                textposition="top center",
+                textfont=dict(size=14, color="white"),
+                name=f"Centróide (σ_A = {format_frac(np.real(sigma_A))})",
+                hovertemplate=f"<b>Centróide</b><br>σ_A = {format_frac(np.real(sigma_A))}<extra></extra>",
+            )
         )
-    )
     add_poles_zeros_traces(fig7, poles, zeros, show_labels=False)
     fig7.update_layout(height=520)
     return fig7

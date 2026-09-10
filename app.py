@@ -30,13 +30,25 @@ st.set_page_config(page_title="LGR - 12 Passos", layout="wide")
 from fractions import Fraction
 
 def format_frac(val, tol=1e-5):
-    if np.isinf(val):
-        return "\\infty" if val > 0 else "-\\infty"
-    if np.isnan(val):
-        return "NaN"
-    if abs(val - round(val)) < tol:
-        return f"{int(round(val))}"
-    return f"{float(val):.3g}"
+    import math
+    try:
+        fval = float(val)
+        if math.isinf(fval):
+            return "\\infty" if fval > 0 else "-\\infty"
+        if math.isnan(fval):
+            return "NaN"
+        if abs(fval - round(fval)) < tol:
+            return f"{int(round(fval))}"
+        return f"{fval:.3g}"
+    except Exception:
+        pass
+    try:
+        if abs(val - round(val)) < tol:
+            return f"{int(round(val))}"
+        return f"{float(val):.3g}"
+    except:
+        return str(val)
+
 
 def format_complex_frac(val, tol=1e-5):
     r = float(np.real(val))
@@ -785,11 +797,14 @@ def main():
                 st.markdown("O LGR é simétrico em relação ao eixo real.")
                 st.markdown("<br><hr style=\"opacity: 0.2;\">", unsafe_allow_html=True)
                 st.markdown("**7. Assíntotas**")
+                sigma_A = None
+                angles_A = []
                 if nP == nZ:
                     st.markdown("• Não há assíntotas.")
                 else:
                     sum_p_str = " + ".join([f"({format_complex_frac(p)})" for p in poles]) or "0"
                     sum_z_str = " + ".join([f"({format_complex_frac(z)})" for z in zeros]) or "0"
+                    sigma_A = (np.sum(poles) - np.sum(zeros)) / (nP - nZ)
                     sigma_a_val = format_frac(np.real(sigma_A))
                     st.latex(f"\\sigma_A = \\frac{{\\sum p_i - \\sum z_i}}{{n_P - n_Z}} = \\frac{{[{sum_p_str}] - [{sum_z_str}]}}{{{nP} - {nZ}}} = {sigma_a_val}")
                     angles_A = [(2 * q + 1) * 180 / abs(nP - nZ) for q in range(abs(nP - nZ))]

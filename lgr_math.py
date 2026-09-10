@@ -10,10 +10,24 @@ from typing import List, Tuple, Dict, Any
 
 
 def format_frac(val, tol=1e-5):
-    if abs(val - round(val)) < tol:
-        return f"{int(round(val))}"
-    return f"{float(val):.3g}"
-
+    import math
+    try:
+        fval = float(val)
+        if math.isinf(fval):
+            return "\\infty" if fval > 0 else "-\\infty"
+        if math.isnan(fval):
+            return "NaN"
+        if abs(fval - round(fval)) < tol:
+            return f"{int(round(fval))}"
+        return f"{fval:.3g}"
+    except Exception:
+        pass
+    try:
+        if abs(val - round(val)) < tol:
+            return f"{int(round(val))}"
+        return f"{float(val):.3g}"
+    except:
+        return str(val)
 
 def format_complex_frac(val, tol=1e-5):
     r = float(np.real(val))
