@@ -327,3 +327,366 @@ def plot_test_point_vectors(
 
     fig.update_layout(height=520)
     return fig
+
+
+def generate_fig7_asymptotes(poles, zeros, sigma_A, angles_A, xmin, xmax, ymin, ymax, length_max):
+    fig7 = create_base_plot(poles, zeros, "Assíntotas", xmin, xmax, ymin, ymax, draw_poles_zeros=False)
+    for q, angle in enumerate(angles_A):
+        rad = np.radians(angle)
+        t_vals = []
+        if np.cos(rad) > 1e-5:
+            t_vals.append((xmax - np.real(sigma_A)) / np.cos(rad))
+        elif np.cos(rad) < -1e-5:
+            t_vals.append((xmin - np.real(sigma_A)) / np.cos(rad))
+        if np.sin(rad) > 1e-5:
+            t_vals.append((ymax - 0) / np.sin(rad))
+        elif np.sin(rad) < -1e-5:
+            t_vals.append((ymin - 0) / np.sin(rad))
+        t_vals = [t for t in t_vals if t > 0]
+        t_max = min(t_vals) if t_vals else length_max
+        base_R = max(xmax - xmin, ymax - ymin) * 0.05
+        arc_R = base_R + q * (max(xmax - xmin, ymax - ymin) * 0.08)
+        t_draw = max(t_max * 0.85, arc_R * 1.25)
+        dx = t_draw * np.cos(rad)
+        dy = t_draw * np.sin(rad)
+        head_x = np.real(sigma_A) + dx
+        head_y = dy
+        fig7.add_trace(
+            go.Scatter(
+                x=[np.real(sigma_A), head_x],
+                y=[0, head_y],
+                mode="lines",
+                line=dict(color="orange", width=2, dash="dash"),
+                showlegend=False,
+            )
+        )
+        fig7.add_annotation(
+            x=head_x,
+            y=head_y,
+            text=f"θ_{q} = {format_frac(angle)}°",
+            showarrow=False,
+            font=dict(color="orange", size=12),
+            bgcolor="rgba(14, 17, 23, 0.85)",
+            bordercolor="orange",
+            borderwidth=1,
+            borderpad=3,
+        )
+        theta_start = 0 if rad >= 0 else rad
+        theta_end = rad if rad >= 0 else 0
+        theta_arc = np.linspace(theta_start, theta_end, 30)
+        arc_x = np.real(sigma_A) + arc_R * np.cos(theta_arc)
+        arc_y = arc_R * np.sin(theta_arc)
+        fig7.add_trace(
+            go.Scatter(
+                x=arc_x,
+                y=arc_y,
+                mode="lines",
+                line=dict(color="rgba(255, 165, 0, 0.6)", width=1.5),
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
+    fig7.add_trace(
+        go.Scatter(
+            x=[np.real(sigma_A)],
+            y=[0],
+            mode="markers+text",
+            marker=dict(symbol="star", size=14, color="orange", line=dict(width=2, color="white")),
+            text=["σ_A"],
+            textposition="top center",
+            textfont=dict(size=14, color="white"),
+            name=f"Centróide (σ_A = {format_frac(np.real(sigma_A))})",
+            hovertemplate=f"<b>Centróide</b><br>σ_A = {format_frac(np.real(sigma_A))}<extra></extra>",
+        )
+    )
+    add_poles_zeros_traces(fig7, poles, zeros, show_labels=False)
+    fig7.update_layout(height=520)
+    return fig7
+
+def generate_fig8_breakaway(poles, zeros, segment_coords, candidates, xmin, xmax, ymin, ymax):
+    fig8 = create_base_plot(poles, zeros, "Pontos de Saída e Entrada no Plano s", xmin, xmax, ymin, ymax, draw_poles_zeros=False)
+    final_x = []
+    final_y = []
+    for start, end in segment_coords:
+        final_x.extend([start, end, None])
+        final_y.extend([0, 0, None])
+    fig8.add_trace(
+        go.Scatter(
+            x=final_x,
+            y=final_y,
+            mode="lines",
+            line=dict(color="#00b4d8", width=5),
+            name="Segmentos LGR Real",
+            hoverinfo="skip",
+        )
+    )
+    for cand in candidates:
+        if cand["is_valid"]:
+            s_pt = cand["s_val"]
+            k_pt = cand["K_real"]
+            cls = cand["classification"]
+            x_pt = float(np.real(s_pt))
+            y_pt = float(np.imag(s_pt))
+            s_lbl = format_complex_frac(s_pt)
+            k_lbl = format_frac(k_pt)
+            if cls == "breakaway":
+                color_m = "#00ff88"
+                name_m = "Ponto de Saída"
+                tag = "Saída"
+            elif cls == "breakin":
+                color_m = "#ff9e00"
+                name_m = "Ponto de Entrada"
+                tag = "Entrada"
+            else:
+                color_m = "#e040fb"
+                name_m = "Bifurcação"
+                tag = "Bifurcação"
+            fig8.add_trace(
+                go.Scatter(
+                    x=[x_pt],
+                    y=[y_pt],
+                    mode="markers",
+                    marker=dict(symbol="diamond", size=14, color=color_m, line=dict(width=2, color="white")),
+                    name=f"{name_m} (s={s_lbl})",
+                    hovertemplate=f"<b>{name_m}</b><br>s = {s_lbl}<br>K = {k_lbl}<extra></extra>",
+                )
+            )
+            fig8.add_annotation(
+                x=x_pt,
+                y=y_pt,
+                text=f"{tag}<br>s = {s_lbl}<br>K = {k_lbl}",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1,
+                arrowwidth=2,
+                arrowcolor=color_m,
+                ax=0,
+                ay=-45 if y_pt >= 0 else 45,
+                font=dict(color="white", size=11),
+                bgcolor="rgba(14, 17, 23, 0.85)",
+                bordercolor=color_m,
+                borderwidth=1,
+                borderpad=3,
+            )
+    add_poles_zeros_traces(fig8, poles, zeros, show_labels=False)
+    fig8.update_layout(height=520)
+    return fig8
+
+def generate_fig9_crossings(poles, zeros, crossings_data, xmin, xmax, ymin, ymax):
+    fig9 = create_base_plot(poles, zeros, "Cruzamento com o Eixo Imaginário (jω)", xmin, xmax, ymin, ymax, draw_poles_zeros=False)
+    fig9.add_vline(x=0, line_dash="solid", line_color="rgba(0, 180, 216, 0.4)", line_width=2)
+    if crossings_data:
+        for data in crossings_data:
+            k_crit = data["k_crit"]
+            omegas = data["omegas"]
+            for w in omegas:
+                fig9.add_trace(
+                    go.Scatter(
+                        x=[0],
+                        y=[w],
+                        mode="markers",
+                        marker=dict(symbol="star", size=16, color="#ff007f", line=dict(width=2, color="white")),
+                        name=f"+{format_frac(w)}j (K={format_frac(k_crit)})",
+                        hovertemplate=f"<b>Cruzamento jω</b><br>s = +{format_frac(w)}j<br>ω = {format_frac(w)} rad/s<br>K = {format_frac(k_crit)}<extra></extra>",
+                    )
+                )
+                fig9.add_annotation(
+                    x=0,
+                    y=w,
+                    text=f"<b>jω = +{format_frac(w)}</b><br>K = {format_frac(k_crit)}",
+                    showarrow=True,
+                    arrowhead=2,
+                    arrowsize=1,
+                    arrowwidth=2,
+                    arrowcolor="#ff007f",
+                    ax=50,
+                    ay=-30,
+                    font=dict(color="white", size=11),
+                    bgcolor="rgba(14, 17, 23, 0.85)",
+                    bordercolor="#ff007f",
+                    borderwidth=1,
+                    borderpad=3,
+                )
+                fig9.add_trace(
+                    go.Scatter(
+                        x=[0],
+                        y=[-w],
+                        mode="markers",
+                        marker=dict(symbol="star", size=16, color="#ff007f", line=dict(width=2, color="white")),
+                        name=f"-{format_frac(w)}j (K={format_frac(k_crit)})",
+                        hovertemplate=f"<b>Cruzamento jω</b><br>s = -{format_frac(w)}j<br>ω = {format_frac(w)} rad/s<br>K = {format_frac(k_crit)}<extra></extra>",
+                    )
+                )
+                fig9.add_annotation(
+                    x=0,
+                    y=-w,
+                    text=f"<b>jω = -{format_frac(w)}</b><br>K = {format_frac(k_crit)}",
+                    showarrow=True,
+                    arrowhead=2,
+                    arrowsize=1,
+                    arrowwidth=2,
+                    arrowcolor="#ff007f",
+                    ax=50,
+                    ay=30,
+                    font=dict(color="white", size=11),
+                    bgcolor="rgba(14, 17, 23, 0.85)",
+                    bordercolor="#ff007f",
+                    borderwidth=1,
+                    borderpad=3,
+                )
+                fig9.add_trace(
+                    go.Scatter(
+                        x=[0, 0],
+                        y=[-w, w],
+                        mode="lines",
+                        line=dict(color="#ff007f", width=2, dash="dash"),
+                        name="Eixo de Oscilação",
+                        showlegend=False,
+                        hoverinfo="skip",
+                    )
+                )
+    else:
+        fig9.add_annotation(
+            x=0,
+            y=(ymin + ymax) * 0.25,
+            text="<b>Sem cruzamento com jω para K > 0</b><br>Sistema permanece estável no SPE",
+            showarrow=False,
+            font=dict(color="#00ff88", size=12),
+            bgcolor="rgba(14, 17, 23, 0.85)",
+            bordercolor="#00ff88",
+            borderwidth=1,
+            borderpad=5,
+        )
+    add_poles_zeros_traces(fig9, poles, zeros, show_labels=False)
+    fig9.update_layout(height=520)
+    return fig9
+
+def generate_fig10_angles(poles, zeros, has_complex, pole_details, zero_details, xmin, xmax, ymin, ymax):
+    fig10 = create_base_plot(poles, zeros, "Ângulos de Partida e Chegada no Plano s", xmin, xmax, ymin, ymax, draw_poles_zeros=False)
+    if has_complex:
+        arrow_len = max(0.8, (xmax - xmin) * 0.12)
+        for pd in pole_details:
+            cp = pd["pole"]
+            for b in pd["branches"]:
+                ang_deg = b["norm"]
+                rad = np.radians(ang_deg)
+                dx = arrow_len * np.cos(rad)
+                dy = arrow_len * np.sin(rad)
+                fig10.add_trace(
+                    go.Scatter(
+                        x=[cp.real, cp.real + dx],
+                        y=[cp.imag, cp.imag + dy],
+                        mode="lines",
+                        line=dict(color="#00f5d4", width=3),
+                        name=f"Partida de {format_complex_frac(cp)} (θ={format_frac(ang_deg)}°)",
+                        hovertemplate=f"<b>Ângulo de Partida</b><br>s = {format_complex_frac(cp)}<br>θ<sub>p</sub> = {format_frac(ang_deg)}°<extra></extra>",
+                    )
+                )
+                fig10.add_annotation(
+                    x=cp.real + dx,
+                    y=cp.imag + dy,
+                    ax=cp.real,
+                    ay=cp.imag,
+                    xref="x",
+                    yref="y",
+                    axref="x",
+                    ayref="y",
+                    showarrow=True,
+                    arrowhead=2,
+                    arrowsize=1.5,
+                    arrowwidth=3,
+                    arrowcolor="#00f5d4",
+                )
+                fig10.add_annotation(
+                    x=cp.real + dx * 1.15,
+                    y=cp.imag + dy * 1.15,
+                    text=f"<b>θ<sub>p</sub> = {format_frac(ang_deg)}°</b>",
+                    showarrow=False,
+                    font=dict(color="#00f5d4", size=11),
+                    bgcolor="rgba(14, 17, 23, 0.85)",
+                    bordercolor="#00f5d4",
+                    borderwidth=1,
+                    borderpad=3,
+                )
+                for vp in pd["vecs_p"]:
+                    p_orig = vp["pole"]
+                    fig10.add_trace(
+                        go.Scatter(
+                            x=[p_orig.real, cp.real],
+                            y=[p_orig.imag, cp.imag],
+                            mode="lines",
+                            line=dict(color="rgba(255, 100, 100, 0.4)", width=1.5, dash="dot"),
+                            showlegend=False,
+                            hoverinfo="skip",
+                        )
+                    )
+                for vz in pd["vecs_z"]:
+                    z_orig = vz["zero"]
+                    fig10.add_trace(
+                        go.Scatter(
+                            x=[z_orig.real, cp.real],
+                            y=[z_orig.imag, cp.imag],
+                            mode="lines",
+                            line=dict(color="rgba(100, 255, 100, 0.4)", width=1.5, dash="dot"),
+                            showlegend=False,
+                            hoverinfo="skip",
+                        )
+                    )
+        for zd in zero_details:
+            cz = zd["zero"]
+            for b in zd["branches"]:
+                ang_deg = b["norm"]
+                rad = np.radians(ang_deg)
+                dx = arrow_len * np.cos(rad)
+                dy = arrow_len * np.sin(rad)
+                fig10.add_trace(
+                    go.Scatter(
+                        x=[cz.real + dx, cz.real],
+                        y=[cz.imag + dy, cz.imag],
+                        mode="lines",
+                        line=dict(color="#ffbe0b", width=3),
+                        name=f"Chegada em {format_complex_frac(cz)} (θ={format_frac(ang_deg)}°)",
+                        hovertemplate=f"<b>Ângulo de Chegada</b><br>s = {format_complex_frac(cz)}<br>θ<sub>z</sub> = {format_frac(ang_deg)}°<extra></extra>",
+                    )
+                )
+                fig10.add_annotation(
+                    x=cz.real,
+                    y=cz.imag,
+                    ax=cz.real + dx,
+                    ay=cz.imag + dy,
+                    xref="x",
+                    yref="y",
+                    axref="x",
+                    ayref="y",
+                    showarrow=True,
+                    arrowhead=2,
+                    arrowsize=1.5,
+                    arrowwidth=3,
+                    arrowcolor="#ffbe0b",
+                )
+                fig10.add_annotation(
+                    x=cz.real + dx * 1.15,
+                    y=cz.imag + dy * 1.15,
+                    text=f"<b>θ<sub>z</sub> = {format_frac(ang_deg)}°</b>",
+                    showarrow=False,
+                    font=dict(color="#ffbe0b", size=11),
+                    bgcolor="rgba(14, 17, 23, 0.85)",
+                    bordercolor="#ffbe0b",
+                    borderwidth=1,
+                    borderpad=3,
+                )
+    else:
+        fig10.add_annotation(
+            x=(xmin + xmax) * 0.5,
+            y=(ymin + ymax) * 0.5,
+            text="<b>Não aplicável:</b> Sem polos ou zeros complexos conjugados.<br>Ramos iniciam e terminam ao longo do eixo real.",
+            showarrow=False,
+            font=dict(color="#00b4d8", size=13),
+            bgcolor="rgba(14, 17, 23, 0.85)",
+            bordercolor="#00b4d8",
+            borderwidth=1,
+            borderpad=6,
+        )
+    add_poles_zeros_traces(fig10, poles, zeros, show_labels=False)
+    fig10.update_layout(height=520)
+    return fig10
