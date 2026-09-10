@@ -912,6 +912,8 @@ def main():
                 else:
                     render_phasor_angles(dep_arr.get("pole_details", []), True, poles, zeros, format_complex_frac, format_frac, st)
                     render_phasor_angles(dep_arr.get("zero_details", []), False, poles, zeros, format_complex_frac, format_frac, st)
+                fig10 = generate_fig10_angles(poles, zeros, dep_arr.get('has_complex'), dep_arr.get('pole_details', []), dep_arr.get('zero_details', []), xmin, xmax, ymin, ymax)
+                st.plotly_chart(fig10, width='stretch', config={'scrollZoom': True})
                 st.markdown("**Esboço Final do LGR:**")
                 render_final_animated_lgr(valid_breakaway, routh_result, D_coeffs, N_coeffs, nP, nZ, poles, zeros, xmin, xmax, ymin, ymax)
                 st.markdown("---")
