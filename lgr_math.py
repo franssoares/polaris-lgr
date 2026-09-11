@@ -9,7 +9,8 @@ from fractions import Fraction
 from typing import List, Tuple, Dict, Any
 
 
-def format_frac(val, tol=1e-5):
+def format_frac(val: Any, tol: float = 1e-5) -> str:
+    """Formats a numeric value into an integer or 6-digit float string representation."""
     import math
     try:
         fval = float(val)
@@ -19,24 +20,25 @@ def format_frac(val, tol=1e-5):
             return "NaN"
         if abs(fval - round(fval)) < tol:
             return f"{int(round(fval))}"
-        return f"{fval:.3g}"
+        return f"{fval:.6g}"
     except Exception:
         pass
     try:
         if abs(val - round(val)) < tol:
             return f"{int(round(val))}"
-        return f"{float(val):.3g}"
-    except:
+        return f"{float(val):.6g}"
+    except Exception:
         return str(val)
 
-def format_complex_frac(val, tol=1e-5):
+def format_complex_frac(val: Any, tol: float = 1e-5) -> str:
+    """Formats a complex or real number into a clean mathematical string representation."""
     r = float(np.real(val))
     i = float(np.imag(val))
 
     if abs(i) < tol:
         return format_frac(r, tol)
 
-    i_str = "j" if abs(abs(i) - 1.0) < tol else f"{abs(i):.3g}j"
+    i_str = "j" if abs(abs(i) - 1.0) < tol else f"{abs(i):.6g}j"
     sign = "+" if i > 0 else "-"
 
     if abs(r) < tol:

@@ -329,7 +329,18 @@ def plot_test_point_vectors(
     return fig
 
 
-def generate_fig7_asymptotes(poles, zeros, sigma_A, angles_A, xmin, xmax, ymin, ymax, length_max):
+def generate_fig7_asymptotes(
+    poles: np.ndarray,
+    zeros: np.ndarray,
+    sigma_A: Any,
+    angles_A: List[float],
+    xmin: float,
+    xmax: float,
+    ymin: float,
+    ymax: float,
+    length_max: float,
+) -> go.Figure:
+    """Generates a Plotly figure showing the asymptotes, centroid, and angle sectors."""
     fig7 = create_base_plot(poles, zeros, "Assíntotas", xmin, xmax, ymin, ymax, draw_poles_zeros=False)
     for q, angle in enumerate(angles_A):
         rad = np.radians(angle)
@@ -404,7 +415,17 @@ def generate_fig7_asymptotes(poles, zeros, sigma_A, angles_A, xmin, xmax, ymin, 
     fig7.update_layout(height=520)
     return fig7
 
-def generate_fig8_breakaway(poles, zeros, segment_coords, candidates, xmin, xmax, ymin, ymax):
+def generate_fig8_breakaway(
+    poles: np.ndarray,
+    zeros: np.ndarray,
+    segment_coords: List[Any],
+    candidates: List[Dict[str, Any]],
+    xmin: float,
+    xmax: float,
+    ymin: float,
+    ymax: float,
+) -> go.Figure:
+    """Generates a Plotly figure rendering the real LGR segments and candidate breakaway/break-in points."""
     fig8 = create_base_plot(poles, zeros, "Pontos de Saída e Entrada no Plano s", xmin, xmax, ymin, ymax, draw_poles_zeros=False)
     final_x = []
     final_y = []
@@ -473,7 +494,16 @@ def generate_fig8_breakaway(poles, zeros, segment_coords, candidates, xmin, xmax
     fig8.update_layout(height=520)
     return fig8
 
-def generate_fig9_crossings(poles, zeros, crossings_data, xmin, xmax, ymin, ymax):
+def generate_fig9_crossings(
+    poles: np.ndarray,
+    zeros: np.ndarray,
+    crossings_data: List[Dict[str, Any]],
+    xmin: float,
+    xmax: float,
+    ymin: float,
+    ymax: float,
+) -> go.Figure:
+    """Generates a Plotly figure rendering imaginary axis crossing points (critical gain K_crit and omega)."""
     fig9 = create_base_plot(poles, zeros, "Cruzamento com o Eixo Imaginário (jω)", xmin, xmax, ymin, ymax, draw_poles_zeros=False)
     fig9.add_vline(x=0, line_dash="solid", line_color="rgba(0, 180, 216, 0.4)", line_width=2)
     if crossings_data:
@@ -562,7 +592,18 @@ def generate_fig9_crossings(poles, zeros, crossings_data, xmin, xmax, ymin, ymax
     fig9.update_layout(height=520)
     return fig9
 
-def generate_fig10_angles(poles, zeros, has_complex, pole_details, zero_details, xmin, xmax, ymin, ymax):
+def generate_fig10_angles(
+    poles: np.ndarray,
+    zeros: np.ndarray,
+    has_complex: bool,
+    pole_details: List[Dict[str, Any]],
+    zero_details: List[Dict[str, Any]],
+    xmin: float,
+    xmax: float,
+    ymin: float,
+    ymax: float,
+) -> go.Figure:
+    """Generates a Plotly figure rendering departure angles from complex poles and arrival angles at complex zeros."""
     fig10 = create_base_plot(poles, zeros, "Ângulos de Partida e Chegada no Plano s", xmin, xmax, ymin, ymax, draw_poles_zeros=False)
     if has_complex:
         arrow_len = max(0.8, (xmax - xmin) * 0.12)
